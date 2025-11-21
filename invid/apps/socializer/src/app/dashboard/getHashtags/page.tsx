@@ -1,0 +1,233 @@
+"use client";
+import React, { useState, useEffect, useRef } from "react";
+import { Send, Copy, Hash, Sparkles, TrendingUp, ArrowLeft } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { SecondNav } from "@/components/myComponents/nav2";
+import UIWrapper from "@/components/myComponents/UIWrapper";
+import Link from "next/link";
+
+const Page = () => {
+  const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = { text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const response = await axios.post("/api/gemini", {
+        prompt: `As an expert social media strategist and hashtag specialist, analyze the following content topic: "${input}"
+
+Create a comprehensive hashtag strategy that includes:
+
+1. **Primary Hashtags (3-5)**: High-impact, trending hashtags with good reach potential
+2. **Niche Hashtags (5-7)**: Specific to the content topic with engaged communities  
+3. **Long-tail Hashtags (3-5)**: Less competitive but highly targeted hashtags
+4. **Branded/Community Hashtags (2-3)**: For building community and brand recognition
+
+Requirements:
+- Mix of high, medium, and low competition hashtags
+- Include current trending hashtags relevant to the topic
+- Ensure hashtags are platform-optimized (Instagram, TikTok, YouTube Shorts)
+- Provide hashtags that encourage engagement and discoverability
+- Include seasonal/timely hashtags if applicable
+
+Format the response as organized categories with explanations for hashtag selection strategy. Focus on hashtags that will maximize reach, engagement, and audience growth.`,
+      });
+
+      const botMessage = {
+        text: response.data.success
+          ? response.data.data
+          : "⚠️ Failed to fetch response. Try again.",
+        sender: "bot",
+      };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error fetching response:", error);
+      setMessages((prev) => [
+        ...prev,
+        { text: "❌ Error processing request.", sender: "bot" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard ✅");
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
+  return (
+    <UIWrapper classname="flex flex-col h-screen">
+      {/* Header */}
+      <div className="fixed top-0 left-0 w-full flex items-center justify-between z-20 glass border-b border-white/10 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+            <ArrowLeft className="w-6 h-6 text-purple-400" />
+          </div>
+          </Link>
+          <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+            <Hash className="w-6 h-6 text-purple-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Hashtag Generator</h1>
+            <p className="text-sm text-gray-400">Create trending hashtags for maximum reach</p>
+          </div>
+        </div>
+        <SecondNav />
+      </div>
+
+      {/* Welcome Message */}
+      {messages.length === 0 && !loading && (
+        <div className="flex-1 flex items-center justify-center px-4 pt-24">
+          <div className="text-center max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6">
+              <TrendingUp className="w-4 h-4 text-green-400" />
+              <span className="text-sm text-gray-300">AI-Powered Hashtag Strategy</span>
+            </div>
+            <h2 className="text-3xl font-bold mb-4 gradient-text">
+              Generate Viral Hashtags
+            </h2>
+            <p className="text-gray-300 mb-8">
+              Describe your content topic and get a comprehensive hashtag strategy 
+              designed to maximize your reach and engagement across all platforms.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="glass p-4 rounded-xl">
+                <Sparkles className="w-5 h-5 text-purple-400 mb-2 mx-auto" />
+                <div className="font-medium text-white mb-1">Trending Tags</div>
+                <div className="text-gray-400">Current viral hashtags</div>
+              </div>
+              <div className="glass p-4 rounded-xl">
+                <Hash className="w-5 h-5 text-blue-400 mb-2 mx-auto" />
+                <div className="font-medium text-white mb-1">Niche Specific</div>
+                <div className="text-gray-400">Targeted community tags</div>
+              </div>
+              <div className="glass p-4 rounded-xl">
+                <TrendingUp className="w-5 h-5 text-green-400 mb-2 mx-auto" />
+                <div className="font-medium text-white mb-1">Growth Focused</div>
+                <div className="text-gray-400">Engagement optimized</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat Messages */}
+      <div className="flex-1 w-full max-w-4xl mx-auto px-4 overflow-y-auto pt-6 space-y-6 pb-32">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex w-full ${
+              msg.sender === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`relative group max-w-[85%] ${
+                msg.sender === "user"
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                  : "glass text-white"
+              } p-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02]`}
+            >
+              <div className={`whitespace-pre-wrap text-sm leading-relaxed ${
+                msg.sender === "bot" ? "font-[geist]" : ""
+              }`}>
+                {msg.text}
+              </div>
+              
+              <button
+                onClick={() => copyToClipboard(msg.text)}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 
+                          transition-opacity duration-200 p-2 rounded-lg hover:bg-white/10"
+                title="Copy to clipboard"
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Loading animation */}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="glass p-6 rounded-2xl max-w-[70%]">
+              <div className="flex items-center gap-2 mb-4">
+                <Hash className="w-4 h-4 text-purple-400 animate-pulse" />
+                <span className="text-sm text-gray-400">AI is analyzing trends...</span>
+              </div>
+              <div className="flex items-center gap-1 mb-4">
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-700 rounded animate-pulse" />
+                <div className="h-3 bg-gray-700 rounded animate-pulse w-3/4" />
+                <div className="h-3 bg-gray-700 rounded animate-pulse w-5/6" />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={chatRef}></div>
+      </div>
+
+      {/* Input Box */}
+      <div className="fixed bottom-0 left-0 w-full glass border-t border-white/10">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                className="w-full bg-white/5 border border-white/20 text-white px-4 py-3 
+                          rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 
+                          focus:border-transparent resize-none min-h-[50px] max-h-32"
+                placeholder="Describe your content topic (e.g., 'fitness workout for beginners', 'cooking recipe tutorial')..."
+                rows={1}
+              />
+            </div>
+            <button
+              onClick={handleSendMessage}
+              disabled={loading || !input.trim()}
+              className="p-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 
+                        hover:from-purple-700 hover:to-pink-700 text-white shadow-lg 
+                        hover:shadow-purple-500/25 transition-all duration-300 
+                        disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="text-xs text-gray-500 mt-2 text-center">
+            Press Enter to send • Shift + Enter for new line
+          </div>
+        </div>
+      </div>
+    </UIWrapper>
+  );
+};
+
+export default Page;
