@@ -84,7 +84,7 @@ const ValueSection = () => {
                   What Our Users Say
                 </h4>
                 <blockquote className="text-gray-300 italic">
-                  "invid.ai transformed my content strategy completely. My engagement 
+                  &quot;invid.ai transformed my content strategy completely. My engagement 
                   increased by 400% in just 2 months!"
                 </blockquote>
                 <div className="flex items-center gap-3 mt-4">
