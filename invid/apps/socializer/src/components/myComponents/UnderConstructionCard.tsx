@@ -14,18 +14,10 @@ const UnderConstructionCard = ({ CardTitle, about, origin, icon }: Props) => {
   const Icon = icon;
 
   return (
-    <div className="w-[380px] h-[420px] animate-fade-in">
+    <div className="max-w-5xl max-h-4xl animate-fade-in">
       <div className="relative overflow-hidden rounded-3xl glass border border-orange-500/20 
                       bg-gradient-to-br from-orange-500/5 to-yellow-500/5 w-full h-full
                       opacity-75 cursor-not-allowed">
-        
-        {/* Construction Badge */}
-        <div className="absolute top-5 right-5">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/20 rounded-full border border-orange-500/30">
-            <Construction className="w-3 h-3 text-orange-400" />
-            <span className="text-xs text-orange-300 font-medium">Coming Soon</span>
-          </div>
-        </div>
 
         <div className="relative p-6 h-full flex flex-col">
           {/* Header */}
@@ -63,15 +55,6 @@ const UnderConstructionCard = ({ CardTitle, about, origin, icon }: Props) => {
             </p>
           </div>
 
-          {/* Status Section */}
-          <div className="mt-auto">
-            <div className="w-full h-12 bg-gradient-to-r from-orange-600/50 to-yellow-600/50 
-                           text-white font-semibold rounded-xl border border-orange-500/30
-                           flex items-center justify-center gap-2 cursor-not-allowed">
-              <Clock className="w-4 h-4" />
-              <span>Coming Soon</span>
-            </div>
-          </div>
         </div>
 
         {/* Bottom accent */}

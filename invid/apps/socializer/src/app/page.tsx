@@ -5,7 +5,7 @@ import Navbar from "@/components/myComponents/Navbar";
 
 export default function Home() {
   return (
-    <div className="">
+    <div className="bg-gradient-to-br from-gray-950 via-black">
       <Navbar />
       <Hero />
       <ValueSection />

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { X, ArrowRight, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 
 interface TourStep {
   target: string;
@@ -13,15 +14,17 @@ const tourSteps: TourStep[] = [
   {
     target: "[data-tour='dashboard-cards']",
     title: "Choose Your Content Type",
-    content: "Start by selecting what type of content you want to create. Each tool is optimized for different social media needs.",
-    position: "bottom"
+    content:
+      "Start by selecting what type of content you want to create. Each tool is optimized for different social media needs.",
+    position: "bottom",
   },
   {
     target: "[data-tour='usage-tracker']",
     title: "Track Your Usage",
-    content: "Monitor your daily usage and see when it resets. Upgrade for unlimited access.",
-    position: "left"
-  }
+    content:
+      "Monitor your daily usage and see when it resets. Upgrade for unlimited access.",
+    position: "left",
+  },
 ];
 
 export const OnboardingTour = () => {
@@ -61,17 +64,30 @@ export const OnboardingTour = () => {
   return (
     <>
       <div className="fixed inset-0 bg-black/50 z-40" onClick={completeTour} />
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                     glass rounded-2xl p-6 max-w-md z-50 border border-white/20">
+      TODO: improve the onboarding with images and improve the style/text
+      (0.mail)
+      <Image
+        src={"/onboarding-image-1.png"}
+        fill
+        objectFit="cover"
+        alt={"onboarding-image"}
+      />
+      <div
+        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                     glass rounded-2xl p-6 max-w-md z-50 border border-white/20"
+      >
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-bold text-white">{step.title}</h3>
-          <button onClick={completeTour} className="text-gray-400 hover:text-white">
+          <button
+            onClick={completeTour}
+            className="text-gray-400 hover:text-white"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <p className="text-gray-300 mb-6">{step.content}</p>
-        
+
         <div className="flex justify-between items-center">
           <div className="flex gap-1">
             {tourSteps.map((_, index) => (
@@ -83,7 +99,7 @@ export const OnboardingTour = () => {
               />
             ))}
           </div>
-          
+
           <div className="flex gap-2">
             {currentStep > 0 && (
               <button
@@ -110,3 +126,4 @@ export const OnboardingTour = () => {
     </>
   );
 };
+

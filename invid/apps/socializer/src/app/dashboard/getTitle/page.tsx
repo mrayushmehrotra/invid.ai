@@ -4,7 +4,7 @@ import { Send, Copy, Type, Sparkles, Target, ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { SecondNav } from "@/components/myComponents/nav2";
+
 import UIWrapper from "@/components/myComponents/UIWrapper";
 import Link from "next/link";
 
@@ -83,26 +83,7 @@ Focus on titles that will:
   };
 
   return (
-    <UIWrapper classname="flex flex-col h-screen">
-      {/* Header */}
-      <div className="fixed top-0 left-0 w-full flex items-center justify-between z-20 glass border-b border-white/10 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-            <ArrowLeft className="w-6 h-6 text-purple-400" />
-          </div>
-          </Link>
-          <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-            <Type className="w-6 h-6 text-purple-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold gradient-text">Title Generator</h1>
-            <p className="text-sm text-gray-400">Create SEO-optimized, click-worthy titles</p>
-          </div>
-        </div>
-        <SecondNav />
-      </div>
-
+    <UIWrapper classname="flex flex-col h-screen bg-gradient-to-br from-gray-950 via-black to-black">
       {/* Welcome Message */}
       {messages.length === 0 && !loading && (
         <div className="flex-1 flex items-center justify-center px-4 pt-24">
@@ -115,7 +96,7 @@ Focus on titles that will:
               Generate Viral Titles
             </h2>
             <p className="text-gray-300 mb-8">
-              Describe your content topic and get multiple SEO-optimized title variations 
+              Describe your content topic and get multiple SEO-optimized title variations
               designed to maximize clicks, engagement, and search rankings.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -144,23 +125,20 @@ Focus on titles that will:
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex w-full ${
-              msg.sender === "user" ? "justify-end" : "justify-start"
-            }`}
+            className={`flex w-full ${msg.sender === "user" ? "justify-end" : "justify-start"
+              }`}
           >
             <div
-              className={`relative group max-w-[85%] ${
-                msg.sender === "user"
-                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                  : "glass text-white"
-              } p-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02]`}
+              className={`relative group max-w-[85%] ${msg.sender === "user"
+                ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                : "glass text-white"
+                } p-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02]`}
             >
-              <div className={`whitespace-pre-wrap text-sm leading-relaxed ${
-                msg.sender === "bot" ? "font-[geist]" : ""
-              }`}>
+              <div className={`whitespace-pre-wrap text-sm leading-relaxed ${msg.sender === "bot" ? "font-[geist]" : ""
+                }`}>
                 {msg.text}
               </div>
-              
+
               <button
                 onClick={() => copyToClipboard(msg.text)}
                 className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 
