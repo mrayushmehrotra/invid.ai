@@ -1,5 +1,5 @@
 "use client";
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
@@ -19,166 +19,244 @@ const Navbar = () => {
   ];
   const pathname = usePathname();
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   return (
-    <nav className="w-full fixed top-4 left-4 right-4 z-50 glass rounded-2xl border border-white/10 mx-auto max-w-7xl">
-      <div className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative">
-            <Image
-              src="/logo.png"
-              height={40}
-              width={40}
-              alt="invid.ai"
-              className="rounded-xl transition-transform duration-300 group-hover:scale-110"
-            />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
-          </div>
-          <div>
-            <span className="text-2xl font-bold gradient-text">invid.ai</span>
-            <div className="text-xs text-gray-400 -mt-1">AI Content Creator</div>
-          </div>
-        </Link>
+    <>
+      {/* Main Navbar */}
+      <nav className="w-full fixed top-4 left-4 right-4 z-[9998] glass rounded-2xl border border-white/10 mx-auto max-w-7xl">
+        <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="relative">
+              <Image
+                src="/logo.png"
+                height={32}
+                width={32}
+                alt="invid.ai"
+                className="sm:h-10 sm:w-10 rounded-xl transition-transform duration-300 group-hover:scale-110"
+              />
+              <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
+            </div>
+            <div>
+              <span className="text-xl sm:text-2xl font-bold gradient-text">invid.ai</span>
+              <div className="text-[10px] sm:text-xs text-gray-400 -mt-1 hidden sm:block">AI Content Creator</div>
+            </div>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
-          {pathname == '/' && navLinks.map((item) => (
-            <Link
-              key={item.name}
-              href={item.path}
-              className="text-gray-300 hover:text-white transition-all duration-300 
-                        relative group py-2"
-            >
-              {item.name}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r 
-                              from-purple-500 to-pink-500 transition-all duration-300 
-                              group-hover:w-full" />
-            </Link>
-          ))}
-        </div>
-
-        {/* Auth Section */}
-        <div className="hidden md:flex items-center gap-4">
-          {isSignedIn ? (
-            <>
-              <Link href="/dashboard" className="group">
-                <Button 
-                  variant="outline" 
-                  className="glass border-white/20 text-white hover:bg-white/10 
-                            transition-all duration-300 flex items-center gap-2 rounded-xl"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Dashboard
-                </Button>
-              </Link>
-              <div className="p-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                <UserButton />
-              </div>
-            </>
-          ) : (
-            <>
-              <Link href="/sign-in">
-                <Button 
-                  variant="outline"
-                  className="glass border-white/20 text-white hover:bg-white/10 
-                            transition-all duration-300 rounded-xl"
-                >
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/sign-up" className="group">
-                <button className="px-6 py-2 text-white font-medium rounded-xl
-                                bg-gradient-to-r from-purple-600 to-pink-600 
-                                hover:from-purple-700 hover:to-pink-700 
-                                shadow-lg hover:shadow-purple-500/25 
-                                transition-all duration-300 transform hover:scale-105">
-                  Get Started Free
-                </button>
-              </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-white p-2 rounded-lg glass hover:bg-white/10 
-                    transition-all duration-300"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 glass border-b border-white/10 
-                        animate-fade-in">
-          <div className="px-6 py-6 space-y-6">
-            {navLinks.map((item) => (
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-8">
+            {pathname == '/' && navLinks.map((item) => (
               <Link
                 key={item.name}
                 href={item.path}
-                className="block text-gray-300 hover:text-white transition-colors 
-                          py-2 text-lg font-medium"
-                onClick={() => setIsOpen(false)}
+                className="text-gray-300 hover:text-white transition-all duration-300 
+                          relative group py-2"
               >
                 {item.name}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r 
+                                from-purple-500 to-pink-500 transition-all duration-300 
+                                group-hover:w-full" />
               </Link>
             ))}
+          </div>
 
-            <div className="pt-6 border-t border-white/10 space-y-4">
-              {isSignedIn ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="block w-full"
-                    onClick={() => setIsOpen(false)}
+          {/* Desktop Auth Section */}
+          <div className="hidden md:flex items-center gap-4">
+            {isSignedIn ? (
+              <>
+                <Link href="/dashboard" className="group">
+                  <Button 
+                    variant="outline" 
+                    className="glass border-white/20 text-white hover:bg-white/10 
+                              transition-all duration-300 flex items-center gap-2 rounded-xl"
                   >
-                    <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 
-                                    hover:from-purple-700 hover:to-pink-700 text-white 
-                                    font-medium py-3 rounded-xl shadow-lg">
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <div className="flex items-center gap-3 pt-2">
-                    <div className="p-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
-                      <UserButton />
-                    </div>
-                    <span className="text-gray-300">Account Settings</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/sign-in"
-                    className="block text-gray-300 hover:text-white transition-colors 
-                              py-2 text-lg font-medium"
-                    onClick={() => setIsOpen(false)}
+                    <Sparkles className="w-4 h-4" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <div className="p-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+                  <UserButton />
+                </div>
+              </>
+            ) : (
+              <>
+                <Link href="/sign-in">
+                  <Button 
+                    variant="outline"
+                    className="glass border-white/20 text-white hover:bg-white/10 
+                              transition-all duration-300 rounded-xl"
                   >
                     Sign In
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    className="block w-full"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <button className="w-full px-6 py-3 text-white font-medium rounded-xl
-                                    bg-gradient-to-r from-purple-600 to-pink-600 
-                                    hover:from-purple-700 hover:to-pink-700 
-                                    shadow-lg transition-all duration-300">
-                      Get Started Free
-                    </button>
-                  </Link>
-                </>
-              )}
+                  </Button>
+                </Link>
+                <Link href="/sign-up" className="group">
+                  <button className="px-6 py-2 text-white font-medium rounded-xl
+                                  bg-gradient-to-r from-purple-600 to-pink-600 
+                                  hover:from-purple-700 hover:to-pink-700 
+                                  shadow-lg hover:shadow-purple-500/25 
+                                  transition-all duration-300 transform hover:scale-105">
+                    Get Started Free
+                  </button>
+                </Link>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden text-white p-2 rounded-lg hover:bg-white/10 
+                      transition-all duration-300 z-[10000]"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle menu"
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay - Full Screen */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] md:hidden animate-fade-in"
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Mobile Menu Content */}
+          <div className="fixed inset-0 z-[10000] md:hidden flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-gray-950 via-black to-gray-900 overflow-y-auto">
+              {/* Close Button - Top Right */}
+              <div className="absolute top-6 right-6">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-3 rounded-full glass border border-white/10 text-white hover:bg-white/10 transition-all duration-300"
+                  aria-label="Close menu"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Menu Content - Centered */}
+              <div className="flex flex-col items-center justify-center min-h-full px-8 py-20">
+                {/* Logo */}
+                <Link 
+                  href="/" 
+                  className="flex items-center gap-3 mb-12 group"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <div className="relative">
+                    <Image
+                      src="/logo.png"
+                      height={48}
+                      width={48}
+                      alt="invid.ai"
+                      className="rounded-xl transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
+                  </div>
+                  <div>
+                    <span className="text-3xl font-bold gradient-text">invid.ai</span>
+                    <div className="text-xs text-gray-400 -mt-1">AI Content Creator</div>
+                  </div>
+                </Link>
+
+                {/* Navigation Links */}
+                {pathname == '/' && (
+                  <div className="w-full max-w-sm space-y-2 mb-8">
+                    {navLinks.map((item, index) => (
+                      <Link
+                        key={item.name}
+                        href={item.path}
+                        className="block w-full text-center glass rounded-xl border border-white/10 px-8 py-4 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 text-lg font-medium transform hover:scale-105"
+                        onClick={() => setIsOpen(false)}
+                        style={{ 
+                          animationDelay: `${index * 50}ms`,
+                          animation: 'fade-in 0.3s ease-out forwards'
+                        }}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* Auth Buttons */}
+                <div className="w-full max-w-sm space-y-4 mt-8">
+                  {isSignedIn ? (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        className="block w-full"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 
+                                        hover:from-purple-700 hover:to-pink-700 text-white 
+                                        font-medium py-6 rounded-xl shadow-lg text-lg transform hover:scale-105 transition-all duration-300">
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                      <div className="flex items-center justify-center gap-3 pt-4 glass rounded-xl border border-white/10 p-4">
+                        <div className="p-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+                          <UserButton />
+                        </div>
+                        <span className="text-gray-300 font-medium">Account Settings</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/sign-in"
+                        className="block w-full"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Button 
+                          variant="outline"
+                          className="w-full glass border-white/20 text-white hover:bg-white/10 
+                                    py-6 text-lg rounded-xl transition-all duration-300 transform hover:scale-105"
+                        >
+                          Sign In
+                        </Button>
+                      </Link>
+                      <Link
+                        href="/sign-up"
+                        className="block w-full"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <button className="w-full px-8 py-6 text-white font-medium rounded-xl text-lg
+                                        bg-gradient-to-r from-purple-600 to-pink-600 
+                                        hover:from-purple-700 hover:to-pink-700 
+                                        shadow-lg hover:shadow-purple-500/50 
+                                        transition-all duration-300 transform hover:scale-105">
+                          Get Started Free
+                        </button>
+                      </Link>
+                    </>
+                  )}
+                </div>
+
+                {/* Additional Info */}
+                <div className="mt-12 text-center">
+                  <p className="text-gray-500 text-sm">© 2024 invid.ai. All rights reserved.</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
-    </nav>
+    </>
   );
 };
 

@@ -96,6 +96,24 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
         <head>
+          <meta charSet="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          
+          {/* PWA Meta Tags */}
+          <meta name="application-name" content="invid.ai" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="apple-mobile-web-app-title" content="invid.ai" />
+          <meta name="format-detection" content="telephone=no" />
+          <meta name="mobile-web-app-capable" content="yes" />
+          <meta name="theme-color" content="#9333EA" />
+          
+          {/* Microsoft Tiles */}
+          <meta name="msapplication-config" content="/browserconfig.xml" />
+          <meta name="msapplication-TileColor" content="#9333EA" />
+          <meta name="msapplication-tap-highlight" content="no" />
+          
+          {/* Fonts */}
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         </head>

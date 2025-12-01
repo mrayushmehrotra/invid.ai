@@ -85,13 +85,17 @@ const Page = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-black">
       {/* Hero Section */}
       <div className="pt-8 pb-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-4 text-sm font-medium">
-            <Sparkles className="w-4 h-4 text-purple-400" />
-            <span className="gradient-text">AI Content Dashboard</span>
+        <div className="max-w-7xl mx-auto text-center">
+          {/* Badge */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-white/10 text-sm font-medium">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span className="gradient-text">AI Content Dashboard</span>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 leading-tight">
+          {/* Heading */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
             <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
               Create Content That
             </span>
@@ -101,20 +105,21 @@ const Page = () => {
             </span>
           </h1>
 
-          <p className="text-lg text-gray-300 max-w-2xl mb-6">
+          {/* Description */}
+          <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto mb-8">
             Choose your content type and let our AI generate optimized titles,
             descriptions, and hashtags that maximize your reach.
           </p>
 
           {/* Quick Stats */}
-          <div className="flex flex-wrap gap-4 mb-8">
-            <div className="flex items-center gap-2 px-4 py-2 glass rounded-full">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 glass rounded-full border border-white/10">
               <TrendingUp className="w-4 h-4 text-green-400" />
               <span className="text-sm text-gray-300">
                 95% Engagement Boost
               </span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 glass rounded-full">
+            <div className="flex items-center gap-2 px-4 py-2 glass rounded-full border border-white/10">
               <Sparkles className="w-4 h-4 text-purple-400" />
               <span className="text-sm text-gray-300">
                 AI-Powered Optimization
@@ -129,23 +134,25 @@ const Page = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Cards Section - Takes up 3 columns on large screens */}
           <div className="lg:col-span-3">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-white mb-2">Content Tools</h2>
+            {/* Section Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Content Tools</h2>
               <p className="text-sm text-gray-400">Select a tool to start creating optimized content</p>
             </div>
 
+            {/* Cards Grid */}
             <div
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
               data-tour="dashboard-cards"
             >
               {loading
                 ? Data.map((_, index) => (
                   <div key={index} className="w-full">
-                    <div className="glass rounded-2xl p-6 animate-pulse">
-                      <Skeleton className="h-4 w-24 mb-4 bg-gray-700 rounded" />
-                      <Skeleton className="h-6 w-48 mb-4 bg-gray-700 rounded" />
-                      <Skeleton className="h-20 w-full mb-6 bg-gray-700 rounded" />
-                      <Skeleton className="h-10 w-32 bg-gray-700 rounded" />
+                    <div className="glass rounded-2xl p-6 border border-white/10 animate-pulse">
+                      <Skeleton className="h-4 w-28 mb-4 bg-white/10 rounded-lg" />
+                      <Skeleton className="h-7 w-full mb-3 bg-white/10 rounded-lg" />
+                      <Skeleton className="h-20 w-full mb-6 bg-white/10 rounded-lg" />
+                      <Skeleton className="h-11 w-36 bg-white/10 rounded-xl" />
                     </div>
                   </div>
                 ))
@@ -187,29 +194,29 @@ const Page = () => {
             </div>
 
             {/* Pro Tips */}
-            <div className="glass rounded-2xl p-5 border border-white/10">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="glass rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center gap-2 mb-5">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <Sparkles className="w-5 h-5 text-purple-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Pro Tips</h3>
               </div>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-gray-300">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10">
+                  <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mt-1.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-300 leading-relaxed">
                     Use specific keywords for better SEO results
                   </span>
                 </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <div className="w-1.5 h-1.5 bg-pink-400 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-gray-300">
-                    Test multiple title variations
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10">
+                  <div className="w-2 h-2 bg-gradient-to-r from-pink-400 to-red-400 rounded-full mt-1.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-300 leading-relaxed">
+                    Test multiple title variations for best results
                   </span>
                 </div>
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-gray-300">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10">
+                  <div className="w-2 h-2 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mt-1.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-300 leading-relaxed">
                     Mix trending and niche hashtags
                   </span>
                 </div>
@@ -217,25 +224,25 @@ const Page = () => {
             </div>
 
             {/* Trending Section */}
-            <div className="glass rounded-2xl p-5 border border-white/10">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="glass rounded-2xl p-6 border border-white/10">
+              <div className="flex items-center gap-2 mb-5">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <TrendingUp className="w-5 h-5 text-green-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">Trending Now</h3>
               </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <span className="text-gray-300">#AIContent</span>
-                  <span className="text-green-400 font-medium">+127%</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10 group">
+                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors">#AIContent</span>
+                  <span className="text-green-400 font-semibold text-sm">+127%</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <span className="text-gray-300">#SocialMediaTips</span>
-                  <span className="text-green-400 font-medium">+89%</span>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10 group">
+                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors">#SocialMediaTips</span>
+                  <span className="text-green-400 font-semibold text-sm">+89%</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-                  <span className="text-gray-300">#ContentCreator</span>
-                  <span className="text-green-400 font-medium">+65%</span>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10 group">
+                  <span className="text-sm text-gray-300 group-hover:text-white transition-colors">#ContentCreator</span>
+                  <span className="text-green-400 font-semibold text-sm">+65%</span>
                 </div>
               </div>
             </div>
