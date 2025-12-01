@@ -76,7 +76,6 @@ export async function POST(request: NextRequest) {
       const jsonBody = await request.json();
       action = jsonBody.action;
       accessToken = jsonBody.accessToken;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { action: _a, accessToken: _at, ...rest } = jsonBody;
       data = rest;
     }
