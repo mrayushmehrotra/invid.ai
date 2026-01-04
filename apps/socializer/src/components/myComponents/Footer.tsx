@@ -10,9 +10,38 @@ import {
   Youtube,
 } from "lucide-react";
 import Link from "next/link";
+import axios from "axios";
+import { tryCatch } from "@/lib/try-catch";
+
+import { useState } from "react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+
+  const SendSubscribeEmail = async () => {
+    if (!email) return;
+
+    setIsLoading(true);
+    setStatus("idle");
+
+    const [result, error] = await tryCatch(
+      axios.post("/api/user/mail", { email }),
+    );
+
+    if (result) {
+      setEmail("");
+      setStatus("success");
+      setTimeout(() => setStatus("idle"), 3000);
+    } else {
+      console.error("Failed to send subscription email:", error);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 3000);
+    }
+    setIsLoading(false);
+  };
 
   return (
     <footer
@@ -125,17 +154,51 @@ const Footer = () => {
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="flex-1 font-[geist] px-4 py-3 bg-white/5 border border-white/20 rounded-xl 
                         text-white placeholder-gray-400 focus:outline-none focus:ring-2 
                         focus:ring-purple-500 focus:border-transparent"
             />
             <button
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 
-                              rounded-xl text-white font-medium hover:from-purple-700 
-                              hover:to-pink-700 transition-all duration-300 transform hover:scale-105"
+              onClick={SendSubscribeEmail}
+              disabled={isLoading}
+              className={`px-6 py-3 rounded-xl text-white font-medium transition-all duration-300 transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed ${
+                status === "success"
+                  ? "bg-green-600 hover:bg-green-700"
+                  : status === "error"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              }`}
             >
-              Subscribe
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Sending...
+                </span>
+              ) : status === "success" ? (
+                <span className="flex items-center gap-2">✓ Subscribed!</span>
+              ) : status === "error" ? (
+                <span className="flex items-center gap-2">✗ Failed</span>
+              ) : (
+                "Subscribe"
+              )}
             </button>
           </div>
         </div>

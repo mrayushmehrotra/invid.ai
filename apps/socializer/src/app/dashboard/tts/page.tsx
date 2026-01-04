@@ -1,102 +1,527 @@
 "use client";
-import { ChevronDown, Copy, Download, Loader2, Sparkles, User, Volume2 } from "lucide-react";
+import {
+  ChevronDown,
+  Copy,
+  Download,
+  Loader2,
+  Sparkles,
+  User,
+  Volume2,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useCanPerformAction, useUserData } from "@/state";
-import { LimitExceededBanner, UsageWarning } from "@/components/ui/limit-exceeded";
+import {
+  LimitExceededBanner,
+  UsageWarning,
+} from "@/components/ui/limit-exceeded";
 
 // Murf.ai Voice Library - organized by category
 // Voice IDs are just the name (e.g., "Marcus", "Natalie") without locale prefix
 const MURF_VOICES = {
   "English (US) - Male": [
-    { id: "Marcus", name: "Marcus", style: "Conversational", model: "GEN2", locale: "en-US" },
-    { id: "Ken", name: "Ken", style: "Professional", model: "GEN2", locale: "en-US" },
-    { id: "Clint", name: "Clint", style: "Narration", model: "GEN2", locale: "en-US" },
-    { id: "Terrell", name: "Terrell", style: "Conversational", model: "GEN2", locale: "en-US" },
-    { id: "Miles", name: "Miles", style: "Casual", model: "GEN2", locale: "en-US" },
-    { id: "Cooper", name: "Cooper", style: "Professional", model: "GEN2", locale: "en-US" },
-    { id: "Wayne", name: "Wayne", style: "Friendly", model: "GEN2", locale: "en-US" },
-    { id: "Ryan", name: "Ryan", style: "Clear", model: "GEN2", locale: "en-US" },
-    { id: "Caleb", name: "Caleb", style: "Young", model: "GEN2", locale: "en-US" },
-    { id: "Daniel", name: "Daniel", style: "Warm", model: "GEN2", locale: "en-US" },
-    { id: "Matthew", name: "Matthew", style: "Natural", model: "FALCON", locale: "en-US" },
+    {
+      id: "Marcus",
+      name: "Marcus",
+      style: "Conversational",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Ken",
+      name: "Ken",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Clint",
+      name: "Clint",
+      style: "Narration",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Terrell",
+      name: "Terrell",
+      style: "Conversational",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Miles",
+      name: "Miles",
+      style: "Casual",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Cooper",
+      name: "Cooper",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Wayne",
+      name: "Wayne",
+      style: "Friendly",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Ryan",
+      name: "Ryan",
+      style: "Clear",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Caleb",
+      name: "Caleb",
+      style: "Young",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Daniel",
+      name: "Daniel",
+      style: "Warm",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Matthew",
+      name: "Matthew",
+      style: "Natural",
+      model: "FALCON",
+      locale: "en-US",
+    },
   ],
   "English (US) - Female": [
-    { id: "Natalie", name: "Natalie", style: "Professional", model: "GEN2", locale: "en-US" },
-    { id: "Julia", name: "Julia", style: "Friendly", model: "GEN2", locale: "en-US" },
-    { id: "Alicia", name: "Alicia", style: "Conversational", model: "GEN2", locale: "en-US" },
-    { id: "Daisy", name: "Daisy", style: "Casual", model: "GEN2", locale: "en-US" },
-    { id: "Samantha", name: "Samantha", style: "Warm", model: "GEN2", locale: "en-US" },
-    { id: "Michelle", name: "Michelle", style: "Clear", model: "GEN2", locale: "en-US" },
-    { id: "Claire", name: "Claire", style: "Professional", model: "GEN2", locale: "en-US" },
-    { id: "Molly", name: "Molly", style: "Young", model: "GEN2", locale: "en-US" },
-    { id: "Ariana", name: "Ariana", style: "Energetic", model: "GEN2", locale: "en-US" },
-    { id: "Phoebe", name: "Phoebe", style: "Friendly", model: "GEN2", locale: "en-US" },
+    {
+      id: "Natalie",
+      name: "Natalie",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Julia",
+      name: "Julia",
+      style: "Friendly",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Alicia",
+      name: "Alicia",
+      style: "Conversational",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Daisy",
+      name: "Daisy",
+      style: "Casual",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Samantha",
+      name: "Samantha",
+      style: "Warm",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Michelle",
+      name: "Michelle",
+      style: "Clear",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Claire",
+      name: "Claire",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Molly",
+      name: "Molly",
+      style: "Young",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Ariana",
+      name: "Ariana",
+      style: "Energetic",
+      model: "GEN2",
+      locale: "en-US",
+    },
+    {
+      id: "Phoebe",
+      name: "Phoebe",
+      style: "Friendly",
+      model: "GEN2",
+      locale: "en-US",
+    },
   ],
   "English (UK)": [
-    { id: "Theo", name: "Theo", style: "British Male", model: "GEN2", locale: "en-GB" },
-    { id: "Freddie", name: "Freddie", style: "British Male", model: "GEN2", locale: "en-GB" },
-    { id: "Harrison", name: "Harrison", style: "Professional", model: "GEN2", locale: "en-GB" },
+    {
+      id: "Theo",
+      name: "Theo",
+      style: "British Male",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Freddie",
+      name: "Freddie",
+      style: "British Male",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Harrison",
+      name: "Harrison",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-GB",
+    },
     { id: "Hugo", name: "Hugo", style: "Warm", model: "GEN2", locale: "en-GB" },
-    { id: "Peter", name: "Peter", style: "Clear", model: "GEN2", locale: "en-GB" },
-    { id: "Ruby", name: "Ruby", style: "British Female", model: "GEN2", locale: "en-GB" },
-    { id: "Hazel", name: "Hazel", style: "British Female", model: "GEN2", locale: "en-GB" },
-    { id: "Juliet", name: "Juliet", style: "Professional", model: "GEN2", locale: "en-GB" },
-    { id: "Pearl", name: "Pearl", style: "Warm", model: "GEN2", locale: "en-GB" },
-    { id: "Katie", name: "Katie", style: "Friendly", model: "GEN2", locale: "en-GB" },
+    {
+      id: "Peter",
+      name: "Peter",
+      style: "Clear",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Ruby",
+      name: "Ruby",
+      style: "British Female",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Hazel",
+      name: "Hazel",
+      style: "British Female",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Juliet",
+      name: "Juliet",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Pearl",
+      name: "Pearl",
+      style: "Warm",
+      model: "GEN2",
+      locale: "en-GB",
+    },
+    {
+      id: "Katie",
+      name: "Katie",
+      style: "Friendly",
+      model: "GEN2",
+      locale: "en-GB",
+    },
   ],
   "English (India)": [
-    { id: "Aarav", name: "Aarav", style: "Indian Male", model: "GEN2", locale: "en-IN" },
-    { id: "Rohan", name: "Rohan", style: "Professional", model: "GEN2", locale: "en-IN" },
-    { id: "Eashwar", name: "Eashwar", style: "Clear", model: "GEN2", locale: "en-IN" },
-    { id: "Abhik", name: "Abhik", style: "Conversational", model: "GEN2", locale: "en-IN" },
-    { id: "Arohi", name: "Arohi", style: "Indian Female", model: "GEN2", locale: "en-IN" },
-    { id: "Alia", name: "Alia", style: "Professional", model: "GEN2", locale: "en-IN" },
-    { id: "Priya", name: "Priya", style: "Warm", model: "GEN2", locale: "en-IN" },
-    { id: "Isha", name: "Isha", style: "Natural", model: "GEN2", locale: "en-IN" },
+    {
+      id: "Aarav",
+      name: "Aarav",
+      style: "Indian Male",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Rohan",
+      name: "Rohan",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Eashwar",
+      name: "Eashwar",
+      style: "Clear",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Abhik",
+      name: "Abhik",
+      style: "Conversational",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Arohi",
+      name: "Arohi",
+      style: "Indian Female",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Alia",
+      name: "Alia",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Priya",
+      name: "Priya",
+      style: "Warm",
+      model: "GEN2",
+      locale: "en-IN",
+    },
+    {
+      id: "Isha",
+      name: "Isha",
+      style: "Natural",
+      model: "GEN2",
+      locale: "en-IN",
+    },
   ],
   "English (Australia)": [
-    { id: "Jimm", name: "Jimm", style: "Australian Male", model: "GEN2", locale: "en-AU" },
-    { id: "Mitch", name: "Mitch", style: "Casual", model: "GEN2", locale: "en-AU" },
-    { id: "Leyton", name: "Leyton", style: "Professional", model: "GEN2", locale: "en-AU" },
-    { id: "Ashton", name: "Ashton", style: "Friendly", model: "GEN2", locale: "en-AU" },
-    { id: "Kylie", name: "Kylie", style: "Australian Female", model: "GEN2", locale: "en-AU" },
-    { id: "Harper", name: "Harper", style: "Natural", model: "GEN2", locale: "en-AU" },
-    { id: "Evelyn", name: "Evelyn", style: "Warm", model: "GEN2", locale: "en-AU" },
-    { id: "Ivy", name: "Ivy", style: "Professional", model: "GEN2", locale: "en-AU" },
+    {
+      id: "Jimm",
+      name: "Jimm",
+      style: "Australian Male",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Mitch",
+      name: "Mitch",
+      style: "Casual",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Leyton",
+      name: "Leyton",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Ashton",
+      name: "Ashton",
+      style: "Friendly",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Kylie",
+      name: "Kylie",
+      style: "Australian Female",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Harper",
+      name: "Harper",
+      style: "Natural",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Evelyn",
+      name: "Evelyn",
+      style: "Warm",
+      model: "GEN2",
+      locale: "en-AU",
+    },
+    {
+      id: "Ivy",
+      name: "Ivy",
+      style: "Professional",
+      model: "GEN2",
+      locale: "en-AU",
+    },
   ],
   "Spanish (Mexico)": [
-    { id: "Carlos", name: "Carlos", style: "Spanish Male", model: "GEN2", locale: "es-MX" },
-    { id: "Alejandro", name: "Alejandro", style: "Professional", model: "GEN2", locale: "es-MX" },
-    { id: "Valeria", name: "Valeria", style: "Spanish Female", model: "GEN2", locale: "es-MX" },
-    { id: "Luisa", name: "Luisa", style: "Natural", model: "GEN2", locale: "es-MX" },
+    {
+      id: "Carlos",
+      name: "Carlos",
+      style: "Spanish Male",
+      model: "GEN2",
+      locale: "es-MX",
+    },
+    {
+      id: "Alejandro",
+      name: "Alejandro",
+      style: "Professional",
+      model: "GEN2",
+      locale: "es-MX",
+    },
+    {
+      id: "Valeria",
+      name: "Valeria",
+      style: "Spanish Female",
+      model: "GEN2",
+      locale: "es-MX",
+    },
+    {
+      id: "Luisa",
+      name: "Luisa",
+      style: "Natural",
+      model: "GEN2",
+      locale: "es-MX",
+    },
   ],
   "French (France)": [
-    { id: "Guillaume", name: "Guillaume", style: "French Male", model: "GEN2", locale: "fr-FR" },
-    { id: "Maxime", name: "Maxime", style: "Professional", model: "GEN2", locale: "fr-FR" },
-    { id: "Axel", name: "Axel", style: "Casual", model: "GEN2", locale: "fr-FR" },
-    { id: "Louis", name: "Louis", style: "Warm", model: "GEN2", locale: "fr-FR" },
-    { id: "Adélie", name: "Adélie", style: "French Female", model: "GEN2", locale: "fr-FR" },
-    { id: "Justine", name: "Justine", style: "Professional", model: "GEN2", locale: "fr-FR" },
-    { id: "Louise", name: "Louise", style: "Natural", model: "GEN2", locale: "fr-FR" },
+    {
+      id: "Guillaume",
+      name: "Guillaume",
+      style: "French Male",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
+    {
+      id: "Maxime",
+      name: "Maxime",
+      style: "Professional",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
+    {
+      id: "Axel",
+      name: "Axel",
+      style: "Casual",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
+    {
+      id: "Louis",
+      name: "Louis",
+      style: "Warm",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
+    {
+      id: "Adélie",
+      name: "Adélie",
+      style: "French Female",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
+    {
+      id: "Justine",
+      name: "Justine",
+      style: "Professional",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
+    {
+      id: "Louise",
+      name: "Louise",
+      style: "Natural",
+      model: "GEN2",
+      locale: "fr-FR",
+    },
   ],
-  "German": [
-    { id: "Matthias", name: "Matthias", style: "German Male", model: "GEN2", locale: "de-DE" },
-    { id: "Björn", name: "Björn", style: "Professional", model: "GEN2", locale: "de-DE" },
-    { id: "Ralf", name: "Ralf", style: "Casual", model: "GEN2", locale: "de-DE" },
-    { id: "Lia", name: "Lia", style: "German Female", model: "GEN2", locale: "de-DE" },
-    { id: "Erna", name: "Erna", style: "Professional", model: "GEN2", locale: "de-DE" },
-    { id: "Lara", name: "Lara", style: "Natural", model: "GEN2", locale: "de-DE" },
-    { id: "Josephine", name: "Josephine", style: "Warm", model: "GEN2", locale: "de-DE" },
+  German: [
+    {
+      id: "Matthias",
+      name: "Matthias",
+      style: "German Male",
+      model: "GEN2",
+      locale: "de-DE",
+    },
+    {
+      id: "Björn",
+      name: "Björn",
+      style: "Professional",
+      model: "GEN2",
+      locale: "de-DE",
+    },
+    {
+      id: "Ralf",
+      name: "Ralf",
+      style: "Casual",
+      model: "GEN2",
+      locale: "de-DE",
+    },
+    {
+      id: "Lia",
+      name: "Lia",
+      style: "German Female",
+      model: "GEN2",
+      locale: "de-DE",
+    },
+    {
+      id: "Erna",
+      name: "Erna",
+      style: "Professional",
+      model: "GEN2",
+      locale: "de-DE",
+    },
+    {
+      id: "Lara",
+      name: "Lara",
+      style: "Natural",
+      model: "GEN2",
+      locale: "de-DE",
+    },
+    {
+      id: "Josephine",
+      name: "Josephine",
+      style: "Warm",
+      model: "GEN2",
+      locale: "de-DE",
+    },
   ],
   "Portuguese (Brazil)": [
-    { id: "Benício", name: "Benício", style: "Brazilian Male", model: "GEN2", locale: "pt-BR" },
-    { id: "Isadora", name: "Isadora", style: "Brazilian Female", model: "GEN2", locale: "pt-BR" },
+    {
+      id: "Benício",
+      name: "Benício",
+      style: "Brazilian Male",
+      model: "GEN2",
+      locale: "pt-BR",
+    },
+    {
+      id: "Isadora",
+      name: "Isadora",
+      style: "Brazilian Female",
+      model: "GEN2",
+      locale: "pt-BR",
+    },
   ],
-  "Italian": [
-    { id: "Giorgio", name: "Giorgio", style: "Italian Male", model: "GEN2", locale: "it-IT" },
-    { id: "Elvira", name: "Elvira", style: "Italian Female", model: "GEN2", locale: "it-IT" },
-    { id: "Greta", name: "Greta", style: "Professional", model: "GEN2", locale: "it-IT" },
+  Italian: [
+    {
+      id: "Giorgio",
+      name: "Giorgio",
+      style: "Italian Male",
+      model: "GEN2",
+      locale: "it-IT",
+    },
+    {
+      id: "Elvira",
+      name: "Elvira",
+      style: "Italian Female",
+      model: "GEN2",
+      locale: "it-IT",
+    },
+    {
+      id: "Greta",
+      name: "Greta",
+      style: "Professional",
+      model: "GEN2",
+      locale: "it-IT",
+    },
   ],
 };
 
@@ -113,7 +538,7 @@ const Page = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(
-    MURF_VOICES["English (US) - Male"][10] // Default to Matthew (FALCON)
+    MURF_VOICES["English (US) - Male"][10], // Default to Matthew (FALCON)
   );
   const [isVoiceDropdownOpen, setIsVoiceDropdownOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -130,12 +555,16 @@ const Page = () => {
 
     // Check if limit is exceeded
     if (!ttsLimit.allowed && !ttsLimit.isUnlimited) {
-      toast.error(`Daily limit reached (${ttsLimit.limit} generations/day). Upgrade to Pro for more.`);
+      toast.error(
+        `Daily limit reached (${ttsLimit.limit} generations/day). Upgrade to Pro for more.`,
+      );
       return;
     }
 
     setIsGenerating(true);
-    const toastId = toast.loading(`Generating speech with ${selectedVoice.name}...`);
+    const toastId = toast.loading(
+      `Generating speech with ${selectedVoice.name}...`,
+    );
 
     try {
       const response = await fetch("/api/tts", {
@@ -246,11 +675,17 @@ const Page = () => {
         )}
 
         {/* Usage Warning (when running low) */}
-        {ttsLimit.allowed && ttsLimit.remaining <= 2 && ttsLimit.remaining > 0 && (
-          <div className="mb-4">
-            <UsageWarning used={ttsLimit.used} limit={ttsLimit.limit} remaining={ttsLimit.remaining} />
-          </div>
-        )}
+        {ttsLimit.allowed &&
+          ttsLimit.remaining <= 2 &&
+          ttsLimit.remaining > 0 && (
+            <div className="mb-4">
+              <UsageWarning
+                used={ttsLimit.used}
+                limit={ttsLimit.limit}
+                remaining={ttsLimit.remaining}
+              />
+            </div>
+          )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Text Input Section - Takes 2 columns */}
@@ -280,7 +715,7 @@ const Page = () => {
                 className="w-full h-64 bg-white/5 border border-white/20 rounded-xl p-4 
                           text-white placeholder-gray-400 resize-none font-[geist]
                           focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="if you are happy and you knew it, clap your hands... etc"
+                placeholder="if you are happy and you knew it, clap your hands... etc, press Tab to fill this line"
               />
 
               <div className="flex items-center justify-between mt-4">
@@ -289,14 +724,19 @@ const Page = () => {
                 </span>
                 <button
                   onClick={handleGenerate}
-                  disabled={!text.trim() || isGenerating || (!ttsLimit.allowed && !ttsLimit.isUnlimited)}
+                  disabled={
+                    !text.trim() ||
+                    isGenerating ||
+                    (!ttsLimit.allowed && !ttsLimit.isUnlimited)
+                  }
                   className={`px-8 py-3 text-white font-medium 
                             rounded-xl transition-all duration-300 flex items-center gap-2
                             disabled:opacity-50 disabled:cursor-not-allowed shadow-lg
-                            ${!ttsLimit.allowed && !ttsLimit.isUnlimited
-                      ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 hover:shadow-blue-500/25"
-                    }`}
+                            ${
+                              !ttsLimit.allowed && !ttsLimit.isUnlimited
+                                ? "bg-gray-600 cursor-not-allowed"
+                                : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 hover:shadow-blue-500/25"
+                            }`}
                 >
                   {isGenerating ? (
                     <>
@@ -304,9 +744,7 @@ const Page = () => {
                       Generating...
                     </>
                   ) : !ttsLimit.allowed && !ttsLimit.isUnlimited ? (
-                    <>
-                      Limit Reached
-                    </>
+                    <>Limit Reached</>
                   ) : (
                     <>
                       <Sparkles className="w-5 h-5" />
@@ -381,19 +819,25 @@ const Page = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-semibold text-white">{selectedVoice.name}</div>
+                    <div className="font-semibold text-white">
+                      {selectedVoice.name}
+                    </div>
                     <div className="text-sm text-gray-400">
                       {selectedVoice.style} • {selectedVoice.model}
                     </div>
                   </div>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isVoiceDropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-400 transition-transform ${isVoiceDropdownOpen ? "rotate-180" : ""}`}
+                  />
                 </div>
               </button>
 
               {/* Voice Dropdown */}
               {isVoiceDropdownOpen && (
-                <div className="mt-3 max-h-80 overflow-y-auto rounded-xl bg-black/80 border border-white/10 
-                              divide-y divide-white/5">
+                <div
+                  className="mt-3 max-h-80 overflow-y-auto rounded-xl bg-black/80 border border-white/10 
+                              divide-y divide-white/5"
+                >
                   {Object.entries(MURF_VOICES).map(([category, voices]) => (
                     <div key={category}>
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-white/5 sticky top-0">
@@ -410,13 +854,21 @@ const Page = () => {
                             ${selectedVoice.id === voice.id ? "bg-purple-500/20" : ""}`}
                         >
                           <div>
-                            <div className="text-sm font-medium text-white">{voice.name}</div>
-                            <div className="text-xs text-gray-500">{voice.style}</div>
+                            <div className="text-sm font-medium text-white">
+                              {voice.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {voice.style}
+                            </div>
                           </div>
-                          <span className={`text-xs px-2 py-0.5 rounded-full 
-                            ${voice.model === "FALCON"
-                              ? "bg-blue-500/20 text-blue-400"
-                              : "bg-purple-500/20 text-purple-400"}`}>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full 
+                            ${
+                              voice.model === "FALCON"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : "bg-purple-500/20 text-purple-400"
+                            }`}
+                          >
                             {voice.model}
                           </span>
                         </button>
@@ -430,7 +882,9 @@ const Page = () => {
               <div className="mt-4 space-y-2 text-sm">
                 <div className="p-3 rounded-lg bg-white/5 flex justify-between">
                   <span className="text-gray-400">Model</span>
-                  <span className={`font-medium ${selectedVoice.model === "FALCON" ? "text-blue-400" : "text-purple-400"}`}>
+                  <span
+                    className={`font-medium ${selectedVoice.model === "FALCON" ? "text-blue-400" : "text-purple-400"}`}
+                  >
                     {selectedVoice.model}
                   </span>
                 </div>
@@ -442,7 +896,9 @@ const Page = () => {
                 </div>
                 <div className="p-3 rounded-lg bg-white/5 flex justify-between">
                   <span className="text-gray-400">Style</span>
-                  <span className="text-white font-medium">{selectedVoice.style}</span>
+                  <span className="text-white font-medium">
+                    {selectedVoice.style}
+                  </span>
                 </div>
               </div>
             </div>
@@ -454,6 +910,7 @@ const Page = () => {
               </h3>
               <div className="space-y-2">
                 {[
+                  "If you are happy and you knew it, clap your hands... ",
                   "Hi, i'm raymond from invid.ai, i'm a voice model",
                   "Transform your content into natural, engaging speech with just one click.",
                   "Perfect for podcasts, videos, presentations, and more!",
@@ -477,3 +934,4 @@ const Page = () => {
 };
 
 export default Page;
+

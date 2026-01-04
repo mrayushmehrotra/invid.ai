@@ -35,7 +35,7 @@ export function Hero2() {
   return (
     <>
       <CurvedLoop
-        marqueeText="Smooth Curved Animation"
+        marqueeText="Why choose invid.ai?"
         speed={1}
         curveAmount={300}
         interactive={true}
@@ -44,10 +44,13 @@ export function Hero2() {
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-16 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6 text-sm font-medium">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <span className="gradient-text">Why Choose invid.ai?</span>
-            </div>
+            <br />
+            <br />
+            <br />
+            {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6 text-sm font-medium"> */}
+            {/*   <Sparkles className="w-4 h-4 text-purple-400" /> */}
+            {/*   <span className="gradient-text">Why Choose invid.ai?</span> */}
+            {/* </div> */}
 
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">

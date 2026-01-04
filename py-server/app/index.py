@@ -1,16 +1,126 @@
+"""
+YouTube Metadata Generator API v4.0
+Powered by LangChain + HuggingFace Transformers (Local AI)
+"""
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
+from contextlib import asynccontextmanager
 import re
+import json
+import asyncio
+from datetime import datetime
+import os
 
-app = FastAPI(title="YouTube Metadata Generator", version="2.0.0")
+# ===========================================
+# CONFIGURATION
+# ===========================================
+# Model options (smaller = faster, larger = better):
+# - "TinyLlama/TinyLlama-1.1B-Chat-v1.0" (1.1B, fast)
+# - "microsoft/phi-2" (2.7B, good quality)
+# - "Qwen/Qwen2.5-0.5B-Instruct" (0.5B, very fast)
+
+MODEL_NAME = os.getenv("MODEL_NAME", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+USE_AI = True
+MAX_NEW_TOKENS = 256
+
+# Global instances
+llm_pipeline = None
+model_loaded = False
+device = "cpu"
 
 
+# ===========================================
+# MODEL LOADING
+# ===========================================
+def load_model():
+    """Load HuggingFace model with LangChain"""
+    global llm_pipeline, model_loaded, device
+    
+    try:
+        import torch
+        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+        from langchain_huggingface import HuggingFacePipeline
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"🚀 Loading model: {MODEL_NAME}")
+        print(f"📍 Device: {device}")
+        
+        # Load tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+        
+        # Load model with appropriate settings
+        if device == "cuda":
+            model = AutoModelForCausalLM.from_pretrained(
+                MODEL_NAME,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                trust_remote_code=True,
+            )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                MODEL_NAME,
+                torch_dtype=torch.float32,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+            )
+        
+        # Create pipeline
+        pipe = pipeline(
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer,
+            max_new_tokens=MAX_NEW_TOKENS,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            repetition_penalty=1.1,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+        
+        # Wrap with LangChain
+        llm_pipeline = HuggingFacePipeline(pipeline=pipe)
+        model_loaded = True
+        
+        print("✅ Model loaded successfully!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Model loading failed: {e}")
+        print("⚠️ Falling back to template-only mode")
+        model_loaded = False
+        return False
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load model on startup"""
+    if USE_AI:
+        load_model()
+    yield
+    global llm_pipeline, model_loaded
+    llm_pipeline = None
+    model_loaded = False
+
+
+app = FastAPI(
+    title="YouTube Metadata Generator",
+    version="4.0.0",
+    description="Powered by LangChain + HuggingFace Transformers",
+    lifespan=lifespan
+)
+
+
+# ===========================================
+# PYDANTIC MODELS
+# ===========================================
 class MetadataRequest(BaseModel):
     video_topic: str
     video_description: Optional[str] = None
     target_audience: Optional[str] = None
     keywords: Optional[List[str]] = None
+    use_ai: Optional[bool] = True
 
 
 class MetadataResponse(BaseModel):
@@ -18,82 +128,191 @@ class MetadataResponse(BaseModel):
     description: str
     hashtags: List[str]
     tags: List[str]
+    generated_by: str
 
 
 class DynamicGenerateRequest(BaseModel):
-    """
-    Dynamic generation request that allows frontend to specify which fields to generate.
-    
-    Example structures:
-    - {"title": ""} -> generates only title
-    - {"title": "", "description": ""} -> generates title and description
-    - {"hashtags": []} -> generates only hashtags
-    - {"title": "", "tags": [], "hashtags": []} -> generates title, tags, and hashtags
-    
-    Supported field keys:
-    - "title" or "titles" -> generates SEO-optimized titles
-    - "description" -> generates video description
-    - "hashtags" -> generates hashtags
-    - "tags" -> generates tags
-    """
     video_topic: str
     video_description: Optional[str] = None
     target_audience: Optional[str] = None
     keywords: Optional[List[str]] = None
-    structure: Dict[str, Any]  # The JSON structure defining what to generate
+    structure: Dict[str, Any]
+    use_ai: Optional[bool] = True
 
 
-# YouTube SEO Best Practices 2024:
-# - Titles: 60-70 chars max, keyword at the beginning, power words, numbers
-# - Description: 5000 chars max, first 150 chars crucial ("above the fold")
-# - Tags: 500 character limit total, 5-8 focused tags recommended
-# - Hashtags: Max 15, but 3-5 is optimal. Placed in description.
-
-
-class YouTubeSEOGenerator:
-    """
-    YouTube SEO-optimized metadata generator based on 2024 algorithm best practices.
+# ===========================================
+# LANGCHAIN AI GENERATOR
+# ===========================================
+class LangChainGenerator:
+    """AI generator using LangChain + HuggingFace Transformers"""
     
-    Key algorithm factors:
-    - Click-through rate (CTR) - compelling titles & thumbnails
-    - Watch time - engaging content hooks in descriptions
-    - Engagement - calls to action, questions
-    - Relevance - keyword matching in titles, descriptions, tags
-    """
+    def is_available(self) -> bool:
+        return model_loaded and llm_pipeline is not None
+    
+    async def _generate(self, prompt: str) -> str:
+        """Run generation in thread pool"""
+        if not self.is_available():
+            return ""
+        
+        try:
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                lambda: llm_pipeline.invoke(prompt)
+            )
+            return result
+        except Exception as e:
+            print(f"Generation error: {e}")
+            return ""
+    
+    async def generate_titles(
+        self,
+        topic: str,
+        audience: str = "beginners",
+        keywords: Optional[List[str]] = None
+    ) -> List[str]:
+        """Generate SEO titles using AI"""
+        keywords_str = ", ".join(keywords) if keywords else "none"
+        
+        prompt = f"""Generate 5 YouTube video titles for the following:
+Topic: {topic}
+Audience: {audience}
+Keywords: {keywords_str}
 
+Rules:
+- Each title under 60 characters
+- Use power words like "Ultimate", "Complete", "Easy"
+- Include numbers when possible
+- Make them click-worthy
+
+Return ONLY a JSON array like: ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"]
+
+JSON:"""
+
+        response = await self._generate(prompt)
+        
+        try:
+            # Extract JSON array
+            match = re.search(r'\[.*?\]', response, re.DOTALL)
+            if match:
+                titles = json.loads(match.group())
+                titles = [t.strip()[:70] for t in titles if isinstance(t, str)]
+                if titles:
+                    return titles[:5]
+        except:
+            pass
+        
+        return []
+    
+    async def generate_description(
+        self,
+        topic: str,
+        description: Optional[str] = None,
+        audience: str = "beginners",
+        keywords: Optional[List[str]] = None
+    ) -> str:
+        """Generate video description using AI"""
+        keywords_str = ", ".join(keywords) if keywords else ""
+        
+        prompt = f"""Write a YouTube video description:
+Topic: {topic}
+Audience: {audience}
+Keywords: {keywords_str}
+
+Include:
+- Compelling first line (shown in search)
+- Bullet points of what viewers will learn
+- Timestamps section
+- Call to action (like, subscribe)
+- Relevant hashtags at the end
+
+Description:"""
+
+        response = await self._generate(prompt)
+        
+        if response and len(response) > 50:
+            # Clean up the response
+            desc = response.strip()
+            # Remove the prompt if echoed
+            if "Description:" in desc:
+                desc = desc.split("Description:")[-1].strip()
+            return desc[:5000]
+        
+        return ""
+    
+    async def generate_hashtags(
+        self,
+        topic: str,
+        audience: str = "beginners",
+        keywords: Optional[List[str]] = None
+    ) -> List[str]:
+        """Generate hashtags using AI"""
+        
+        prompt = f"""Generate 10 YouTube hashtags for a video about {topic} for {audience}.
+Return ONLY a JSON array like: ["#hashtag1", "#hashtag2", ...]
+JSON:"""
+
+        response = await self._generate(prompt)
+        
+        try:
+            match = re.search(r'\[.*?\]', response, re.DOTALL)
+            if match:
+                hashtags = json.loads(match.group())
+                hashtags = [h.strip() for h in hashtags if isinstance(h, str) and h.startswith("#")]
+                if hashtags:
+                    return hashtags[:15]
+        except:
+            pass
+        
+        return []
+    
+    async def generate_tags(
+        self,
+        topic: str,
+        audience: str = "beginners",
+        keywords: Optional[List[str]] = None
+    ) -> List[str]:
+        """Generate tags using AI"""
+        
+        prompt = f"""Generate 15 YouTube SEO tags for a video about {topic} for {audience}.
+Return ONLY a JSON array like: ["tag1", "tag2", ...]
+JSON:"""
+
+        response = await self._generate(prompt)
+        
+        try:
+            match = re.search(r'\[.*?\]', response, re.DOTALL)
+            if match:
+                tags = json.loads(match.group())
+                tags = [t.strip().lower() for t in tags if isinstance(t, str)]
+                # Enforce 500 char limit
+                final_tags = []
+                total = 0
+                for tag in tags:
+                    if total + len(tag) + 1 <= 498:
+                        final_tags.append(tag)
+                        total += len(tag) + 1
+                return final_tags
+        except:
+            pass
+        
+        return []
+
+
+# ===========================================
+# TEMPLATE GENERATOR (Fallback)
+# ===========================================
+class TemplateGenerator:
+    """Rule-based fallback generator"""
+    
     def __init__(self):
-        # Power words that increase CTR (Click-Through Rate)
-        self.power_words = [
-            "Ultimate", "Complete", "Essential", "Proven", "Secret",
-            "Easy", "Quick", "Simple", "Best", "Top", "Must-Know",
-            "Expert", "Pro", "Master", "Beginner", "Advanced",
-            "Step-by-Step", "Definitive", "Comprehensive", "Practical"
-        ]
-        
-        # Emotional triggers for engagement
-        self.emotional_triggers = [
-            "Amazing", "Incredible", "Shocking", "Surprising", "Mind-Blowing",
-            "Game-Changing", "Life-Changing", "Powerful", "Brilliant", "Genius"
-        ]
-        
-        # Call-to-action phrases
-        self.ctas = [
-            "👍 Like this video if you found it helpful!",
-            "🔔 Subscribe and hit the bell for more content like this!",
-            "💬 Drop a comment below with your thoughts!",
-            "📢 Share this with someone who needs to see it!",
-            "👇 Let me know in the comments what you want to see next!"
-        ]
-        
-        # SEO-optimized description templates (first 150 chars are crucial!)
-        self.description_templates = [
-            """🎯 {topic} - Everything you need to know!
+        self.description_template = """🎯 {topic} - Everything you need to know!
 
-In this video, you'll learn {topic} designed specifically for {audience}. Whether you're just starting out or looking to level up, this guide covers it all.
+Learn {topic} designed for {audience}. This guide covers everything from basics to advanced tips.
 
-📌 KEY HIGHLIGHTS:
+📌 WHAT YOU'LL LEARN:
 • Complete breakdown of {topic}
-• Practical tips you can apply immediately  
+• Practical tips you can apply immediately
 • Common mistakes to avoid
 • Expert strategies for success
 
@@ -102,628 +321,282 @@ In this video, you'll learn {topic} designed specifically for {audience}. Whethe
 0:30 - Getting Started
 2:00 - Core Concepts
 5:00 - Advanced Tips
-8:00 - Summary & Next Steps
+8:00 - Summary
 
-🔗 RESOURCES & LINKS:
-• [Add your links here]
+👍 Like this video if you find it helpful!
+🔔 Subscribe for more content like this!
+💬 Comment below with your questions!
 
-{cta1}
-{cta2}
+🔍 Related: {keywords}
 
-📧 CONNECT WITH ME:
-• [Your social links]
+{hashtags}"""
 
-🔍 RELATED SEARCHES:
-{keyword_section}
+    def generate_titles(self, topic: str, audience: str, keywords: Optional[List[str]] = None) -> List[str]:
+        t = topic.strip()
+        a = audience.strip()
+        return [
+            f"{t}: Complete Guide for {a}",
+            f"How to {t} - {a} Tutorial",
+            f"5 Steps to Master {t} ({a})",
+            f"The Ultimate {t} Crash Course",
+            f"{t} Explained [{a} Friendly]",
+        ][:5]
 
-{hashtag_section}
-
-#shorts #viral #trending""",
-
-            """✨ Master {topic} in this comprehensive guide!
-
-{topic} explained step-by-step for {audience}. This is the only tutorial you'll ever need!
-
-🎁 WHAT YOU'LL LEARN:
-✅ Fundamentals of {topic}
-✅ Hands-on examples and demonstrations
-✅ Pro tips from industry experts
-✅ Actionable takeaways
-
-⏱️ VIDEO CHAPTERS:
-0:00 - Welcome & Overview
-1:00 - Why {topic} Matters
-3:00 - Step-by-Step Guide
-6:00 - Tips & Tricks
-9:00 - Final Thoughts
-
-💡 PRO TIP: Watch until the end for a bonus tip!
-
-{cta1}
-{cta2}
-
-📚 MENTIONED IN THIS VIDEO:
-• [Add resources]
-
-🔍 SEARCH TERMS:
-{keyword_section}
-
-{hashtag_section}""",
-
-            """🚀 {topic} - The Complete {audience} Guide [{year}]
-
-Stop struggling with {topic}! This video breaks down everything in simple, easy-to-follow steps.
-
-📋 IN THIS VIDEO:
-→ What is {topic} and why it matters
-→ Step-by-step walkthrough
-→ Real examples and use cases
-→ Common pitfalls and how to avoid them
-→ Best practices for {audience}
-
-⏱️ CHAPTERS:
-0:00 Introduction
-0:45 Prerequisites  
-2:00 Getting Started
-4:30 Deep Dive
-7:00 Examples
-9:30 Wrap Up
-
-{cta1}
-
-🎯 WHO IS THIS FOR?
-This video is perfect for {audience} who want to understand {topic} quickly and effectively.
-
-{cta2}
-
-{keyword_section}
-
-{hashtag_section}"""
-        ]
-
-    def generate_titles(
-        self, 
-        topic: str, 
-        audience: str = "beginners",
-        keywords: Optional[List[str]] = None
-    ) -> List[str]:
-        """
-        Generate SEO-optimized titles following YouTube 2024 best practices:
-        - Keep under 60-70 characters
-        - Put main keyword at the beginning
-        - Use power words and numbers
-        - Create curiosity without clickbait
-        """
-        topic_clean = topic.strip()
-        audience_clean = audience.strip()
-        
-        # Extract the core keyword for SEO
-        main_keyword = keywords[0] if keywords else topic_clean
-        
-        titles = []
-        
-        # Format 1: Keyword First + Power Word (Best for SEO)
-        titles.append(f"{topic_clean}: Complete Guide for {audience_clean}")
-        
-        # Format 2: How-to Format (High CTR)
-        titles.append(f"How to {topic_clean} - {audience_clean} Tutorial")
-        
-        # Format 3: Number + Power Word (Proven CTR boost)
-        titles.append(f"5 Steps to Master {topic_clean} (Even for {audience_clean})")
-        
-        # Format 4: Question Format (Creates curiosity)
-        titles.append(f"Want to Learn {topic_clean}? Start Here!")
-        
-        # Format 5: Year-based (Shows freshness)
-        titles.append(f"{topic_clean} Tutorial 2024 | {audience_clean} Guide")
-        
-        # Format 6: Ultimate/Complete (Authority signal)
-        titles.append(f"The Ultimate {topic_clean} Crash Course")
-        
-        # Format 7: Problem-Solution (Addresses pain points)
-        titles.append(f"Stop Struggling with {topic_clean} - Easy Method")
-        
-        # Format 8: Bracket technique (Proven to increase CTR)
-        titles.append(f"{topic_clean} Explained [{audience_clean} Friendly]")
-        
-        # Filter titles to be under 70 characters (YouTube best practice)
-        valid_titles = [t for t in titles if len(t) <= 70]
-        
-        # If all are too long, truncate intelligently
-        if not valid_titles:
-            valid_titles = [t[:67] + "..." for t in titles[:5]]
-        
-        return valid_titles[:5]  # Return top 5 titles
-
-    def generate_description(
-        self,
-        topic: str,
-        description: Optional[str] = None,
-        audience: str = "beginners",
-        keywords: Optional[List[str]] = None,
-    ) -> str:
-        """
-        Generate SEO-optimized YouTube description following 2024 best practices:
-        - First 100-150 chars are crucial (shown in search results)
-        - Include main keyword in first 25 words
-        - Add timestamps/chapters for better engagement
-        - Include 3-5 hashtags
-        - Add CTAs for engagement
-        - Keep under 5000 characters
-        """
-        import random
-        from datetime import datetime
-        
-        topic_clean = topic.strip()
-        audience_clean = audience.strip()
-        year = datetime.now().year
-        
-        # Select a template randomly
-        template = random.choice(self.description_templates)
-        
-        # Generate keyword section for description
-        keyword_section = ""
-        if keywords:
-            keyword_section = "Related topics: " + ", ".join(keywords[:8])
-        
-        # Generate hashtag section (3-5 hashtags is optimal)
-        hashtags = self._generate_hashtags_for_description(topic_clean, audience_clean, keywords)
-        hashtag_section = " ".join(hashtags[:5])
-        
-        # Select CTAs
-        ctas = random.sample(self.ctas, min(2, len(self.ctas)))
-        
-        # Build description
-        desc = template.format(
-            topic=topic_clean,
-            audience=audience_clean,
-            year=year,
-            keyword_section=keyword_section,
-            hashtag_section=hashtag_section,
-            cta1=ctas[0] if len(ctas) > 0 else "",
-            cta2=ctas[1] if len(ctas) > 1 else "",
+    def generate_description(self, topic: str, description: Optional[str], audience: str, keywords: Optional[List[str]]) -> str:
+        keywords_str = ", ".join(keywords[:5]) if keywords else topic
+        hashtags = " ".join(self.generate_hashtags(topic, audience, keywords)[:5])
+        return self.description_template.format(
+            topic=topic.strip(),
+            audience=audience.strip(),
+            keywords=keywords_str,
+            hashtags=hashtags
         )
-        
-        # Ensure description is under 5000 characters
-        if len(desc) > 5000:
-            desc = desc[:4997] + "..."
-            
-        return desc
 
-    def _generate_hashtags_for_description(
-        self,
-        topic: str,
-        audience: str,
-        keywords: Optional[List[str]] = None
-    ) -> List[str]:
-        """Generate hashtags for description (max 15, but 3-5 recommended)"""
-        hashtags = []
-        
-        # Create hashtag from topic
-        topic_hashtag = "#" + re.sub(r"[^a-zA-Z0-9]", "", topic)
-        hashtags.append(topic_hashtag)
-        
-        # Add tutorial hashtag
-        hashtags.append("#" + re.sub(r"[^a-zA-Z0-9]", "", topic) + "Tutorial")
-        
-        # Add audience hashtag
-        audience_hashtag = "#" + re.sub(r"[^a-zA-Z0-9]", "", audience)
-        hashtags.append(audience_hashtag)
-        
-        # Add keyword-based hashtags
-        if keywords:
-            for kw in keywords[:3]:
-                kw_clean = "#" + re.sub(r"[^a-zA-Z0-9]", "", kw)
-                if kw_clean not in hashtags:
-                    hashtags.append(kw_clean)
-        
-        # Add trending/evergreen hashtags
-        hashtags.extend(["#HowTo", "#Tutorial", "#LearnOnYouTube", "#Education"])
-        
-        return hashtags[:10]  # Return max 10 for safety
-
-    def generate_hashtags(
-        self, 
-        topic: str, 
-        audience: str = "beginners",
-        keywords: Optional[List[str]] = None
-    ) -> List[str]:
-        """
-        Generate optimized hashtags following YouTube 2024 guidelines:
-        - Max 15 hashtags allowed (YouTube ignores all if exceeded)
-        - 3-5 is optimal for discoverability
-        - First 3 appear above video title on mobile
-        - No spaces allowed in hashtags
-        """
-        hashtags = []
-        
-        # Clean topic for hashtag
+    def generate_hashtags(self, topic: str, audience: str, keywords: Optional[List[str]] = None) -> List[str]:
         topic_clean = re.sub(r"[^a-zA-Z0-9]", "", topic).lower()
-        
-        # Primary hashtags (most important - these appear above title)
-        hashtags.append(f"#{topic_clean}")
-        hashtags.append(f"#{topic_clean}tutorial")
-        hashtags.append(f"#howto{topic_clean}")
-        
-        # Audience-based hashtags
-        audience_clean = re.sub(r"[^a-zA-Z0-9]", "", audience).lower()
-        hashtags.append(f"#{audience_clean}")
-        hashtags.append(f"#{topic_clean}for{audience_clean}")
-        
-        # Keyword-based hashtags
-        if keywords:
-            for kw in keywords[:3]:
-                kw_clean = "#" + re.sub(r"[^a-zA-Z0-9]", "", kw).lower()
-                if kw_clean not in hashtags:
-                    hashtags.append(kw_clean)
-        
-        # Trending/viral hashtags
-        hashtags.extend([
+        hashtags = [
+            f"#{topic_clean}",
+            f"#{topic_clean}tutorial",
+            f"#howto{topic_clean}",
             "#tutorial",
             "#howto",
             "#learn",
             "#education",
-            "#tips",
-            "#guide",
-            "#2024"
-        ])
-        
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_hashtags = []
-        for h in hashtags:
-            if h.lower() not in seen:
-                seen.add(h.lower())
-                unique_hashtags.append(h)
-        
-        return unique_hashtags[:15]  # YouTube max is 15
-
-    def generate_tags(
-        self,
-        topic: str,
-        audience: str = "beginners",
-        keywords: Optional[List[str]] = None,
-    ) -> List[str]:
-        """
-        Generate SEO-optimized tags following YouTube 2024 best practices:
-        - 500 character limit for all tags combined
-        - First tag should be the main keyword (highest weight)
-        - Mix of broad and specific (long-tail) keywords
-        - Include brand name, variations, and related terms
-        - 5-8 focused tags is recommended vs filling the limit
-        """
-        tags = []
-        topic_lower = topic.lower().strip()
-        audience_lower = audience.lower().strip()
-        
-        # PRIMARY TAGS (Most important - put first)
-        # The first tag carries the most weight
-        tags.append(topic_lower)  # Exact match
-        
-        # LONG-TAIL KEYWORD TAGS (Specific - less competition)
-        tags.append(f"{topic_lower} tutorial")
-        tags.append(f"{topic_lower} for {audience_lower}")
-        tags.append(f"how to {topic_lower}")
-        tags.append(f"learn {topic_lower}")
-        tags.append(f"{topic_lower} guide")
-        tags.append(f"{topic_lower} explained")
-        tags.append(f"{topic_lower} step by step")
-        tags.append(f"{topic_lower} tips")
-        tags.append(f"{topic_lower} course")
-        tags.append(f"{topic_lower} 2024")
-        tags.append(f"best {topic_lower} tutorial")
-        tags.append(f"{topic_lower} for beginners")
-        tags.append(f"{topic_lower} crash course")
-        
-        # AUDIENCE-SPECIFIC TAGS
-        tags.append(f"{audience_lower} {topic_lower}")
-        tags.append(f"{topic_lower} {audience_lower} guide")
-        
-        # KEYWORD-BASED TAGS (from user input)
-        if keywords:
-            for kw in keywords:
-                kw_clean = kw.lower().strip()
-                if kw_clean and kw_clean not in tags:
-                    tags.append(kw_clean)
-                    # Also add variations
-                    tags.append(f"{kw_clean} tutorial")
-                    tags.append(f"how to {kw_clean}")
-        
-        # BROAD/GENERIC TAGS (Higher competition but more reach)
-        generic_tags = [
-            "tutorial",
-            "how to",
-            "guide",
-            "tips",
-            "learn",
-            "education",
-            "training",
-            "course",
-            "lesson",
-            "beginner friendly",
-            "step by step",
-            "easy tutorial",
-            "quick tutorial",
-            "complete guide",
-            "full tutorial",
-            "2024 tutorial",
         ]
-        tags.extend(generic_tags)
+        if keywords:
+            for kw in keywords[:3]:
+                hashtags.append("#" + re.sub(r"[^a-zA-Z0-9]", "", kw).lower())
+        return list(dict.fromkeys(hashtags))[:15]
+
+    def generate_tags(self, topic: str, audience: str, keywords: Optional[List[str]] = None) -> List[str]:
+        t = topic.lower().strip()
+        a = audience.lower().strip()
+        tags = [t, f"{t} tutorial", f"{t} for {a}", f"how to {t}", f"learn {t}", 
+                f"{t} guide", "tutorial", "how to", "guide", "learn"]
+        if keywords:
+            tags.extend([kw.lower().strip() for kw in keywords])
         
-        # Remove duplicates while preserving order (first occurrence)
-        seen = set()
-        unique_tags = []
-        for tag in tags:
-            tag_normalized = tag.lower().strip()
-            if tag_normalized and tag_normalized not in seen:
-                seen.add(tag_normalized)
-                unique_tags.append(tag)
-        
-        # Enforce 500 character limit
-        final_tags = []
-        total_chars = 0
-        for tag in unique_tags:
-            # Each tag plus comma separator
-            tag_length = len(tag) + 1
-            if total_chars + tag_length <= 498:  # Leave buffer
-                final_tags.append(tag)
-                total_chars += tag_length
-            else:
-                break
-        
-        return final_tags
+        final = []
+        total = 0
+        for tag in dict.fromkeys(tags):
+            if total + len(tag) + 1 <= 498:
+                final.append(tag)
+                total += len(tag) + 1
+        return final
 
 
-# Initialize the SEO generator
-seo_generator = YouTubeSEOGenerator()
+# ===========================================
+# HYBRID GENERATOR
+# ===========================================
+class HybridGenerator:
+    """Uses AI when available, falls back to templates"""
+    
+    def __init__(self):
+        self.ai = LangChainGenerator()
+        self.template = TemplateGenerator()
+    
+    def check_ai(self) -> bool:
+        return self.ai.is_available()
+    
+    async def generate_titles(self, topic: str, audience: str, keywords: Optional[List[str]], use_ai: bool = True) -> tuple:
+        if use_ai and USE_AI and self.check_ai():
+            titles = await self.ai.generate_titles(topic, audience, keywords)
+            if titles:
+                return titles, "ai"
+        return self.template.generate_titles(topic, audience, keywords), "template"
+    
+    async def generate_description(self, topic: str, description: Optional[str], audience: str, keywords: Optional[List[str]], use_ai: bool = True) -> tuple:
+        if use_ai and USE_AI and self.check_ai():
+            desc = await self.ai.generate_description(topic, description, audience, keywords)
+            if desc:
+                return desc, "ai"
+        return self.template.generate_description(topic, description, audience, keywords), "template"
+    
+    async def generate_hashtags(self, topic: str, audience: str, keywords: Optional[List[str]], use_ai: bool = True) -> tuple:
+        if use_ai and USE_AI and self.check_ai():
+            hashtags = await self.ai.generate_hashtags(topic, audience, keywords)
+            if hashtags:
+                return hashtags, "ai"
+        return self.template.generate_hashtags(topic, audience, keywords), "template"
+    
+    async def generate_tags(self, topic: str, audience: str, keywords: Optional[List[str]], use_ai: bool = True) -> tuple:
+        if use_ai and USE_AI and self.check_ai():
+            tags = await self.ai.generate_tags(topic, audience, keywords)
+            if tags:
+                return tags, "ai"
+        return self.template.generate_tags(topic, audience, keywords), "template"
 
 
+# Initialize generator
+generator = HybridGenerator()
+
+
+# ===========================================
+# API ENDPOINTS
+# ===========================================
 @app.get("/")
 async def root():
     return {
-        "message": "YouTube SEO Metadata Generator API v2.0",
+        "message": "YouTube Metadata Generator API v4.0",
         "status": "active",
+        "ai_enabled": USE_AI,
+        "ai_available": generator.check_ai(),
+        "ai_model": MODEL_NAME if generator.check_ai() else None,
+        "device": device,
+        "framework": "LangChain + HuggingFace Transformers",
         "features": [
-            "SEO-optimized titles (60-70 char limit)",
-            "Engaging descriptions with timestamps and CTAs",
-            "Strategic hashtags (max 15)",
-            "Tags optimized for 500 char limit",
-            "2024 YouTube algorithm best practices"
+            "🤖 Local AI (no API keys needed)",
+            "🔥 HuggingFace Transformers",
+            "🦜 LangChain integration",
+            "📝 Template fallback",
+            "SEO-optimized output",
         ]
     }
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "version": "2.0.0"}
+    return {
+        "status": "healthy",
+        "version": "4.0.0",
+        "ai_loaded": generator.check_ai(),
+        "model": MODEL_NAME,
+        "device": device
+    }
+
+
+@app.get("/ai/status")
+async def ai_status():
+    return {
+        "available": generator.check_ai(),
+        "model": MODEL_NAME,
+        "device": device,
+        "framework": "LangChain + HuggingFace",
+        "instructions": {
+            "install": "pip install langchain-huggingface transformers torch accelerate",
+            "models": [
+                "TinyLlama/TinyLlama-1.1B-Chat-v1.0 (1.1B, fast)",
+                "microsoft/phi-2 (2.7B, better quality)",
+                "Qwen/Qwen2.5-0.5B-Instruct (0.5B, fastest)",
+            ]
+        } if not generator.check_ai() else None
+    }
 
 
 @app.post("/generate/metadata", response_model=MetadataResponse)
 async def generate_metadata(request: MetadataRequest):
-    """
-    Generate complete YouTube metadata optimized for SEO and the 2024 algorithm.
-    
-    Returns:
-    - titles: 5 SEO-optimized title options (under 70 chars each)
-    - description: Engaging description with timestamps, CTAs, and keywords
-    - hashtags: 10-15 relevant hashtags
-    - tags: Up to 500 characters of relevant tags
-    """
     try:
         audience = request.target_audience or "beginners"
+        use_ai = request.use_ai if request.use_ai is not None else True
 
-        titles = seo_generator.generate_titles(
-            request.video_topic, 
-            audience,
-            request.keywords
-        )
-        description = seo_generator.generate_description(
-            request.video_topic, 
-            request.video_description, 
-            audience, 
-            request.keywords
-        )
-        hashtags = seo_generator.generate_hashtags(
-            request.video_topic, 
-            audience,
-            request.keywords
-        )
-        tags = seo_generator.generate_tags(
-            request.video_topic, 
-            audience, 
-            request.keywords
-        )
+        titles, t_src = await generator.generate_titles(request.video_topic, audience, request.keywords, use_ai)
+        description, d_src = await generator.generate_description(request.video_topic, request.video_description, audience, request.keywords, use_ai)
+        hashtags, h_src = await generator.generate_hashtags(request.video_topic, audience, request.keywords, use_ai)
+        tags, tag_src = await generator.generate_tags(request.video_topic, audience, request.keywords, use_ai)
+
+        generated_by = "ai" if "ai" in [t_src, d_src, h_src, tag_src] else "template"
 
         return MetadataResponse(
-            titles=titles, 
-            description=description, 
-            hashtags=hashtags, 
-            tags=tags
+            titles=titles,
+            description=description,
+            hashtags=hashtags,
+            tags=tags,
+            generated_by=generated_by
         )
-
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error generating metadata: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/generate/titles")
 async def generate_titles(request: MetadataRequest):
-    """Generate SEO-optimized video titles"""
     try:
         audience = request.target_audience or "beginners"
-        titles = seo_generator.generate_titles(
-            request.video_topic, 
-            audience,
-            request.keywords
-        )
-        return {"titles": titles}
+        use_ai = request.use_ai if request.use_ai is not None else True
+        titles, source = await generator.generate_titles(request.video_topic, audience, request.keywords, use_ai)
+        return {"titles": titles, "generated_by": source}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error generating titles: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/generate/description")
 async def generate_description(request: MetadataRequest):
-    """Generate SEO-optimized video description with timestamps and CTAs"""
     try:
         audience = request.target_audience or "beginners"
-        description = seo_generator.generate_description(
-            request.video_topic, 
-            request.video_description, 
-            audience, 
-            request.keywords
-        )
-        return {"description": description}
+        use_ai = request.use_ai if request.use_ai is not None else True
+        description, source = await generator.generate_description(request.video_topic, request.video_description, audience, request.keywords, use_ai)
+        return {"description": description, "generated_by": source}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error generating description: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/generate/hashtags")
 async def generate_hashtags(request: MetadataRequest):
-    """Generate optimized hashtags (max 15 as per YouTube guidelines)"""
     try:
         audience = request.target_audience or "beginners"
-        hashtags = seo_generator.generate_hashtags(
-            request.video_topic, 
-            audience,
-            request.keywords
-        )
-        return {"hashtags": hashtags}
+        use_ai = request.use_ai if request.use_ai is not None else True
+        hashtags, source = await generator.generate_hashtags(request.video_topic, audience, request.keywords, use_ai)
+        return {"hashtags": hashtags, "generated_by": source}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error generating hashtags: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/generate/tags")
 async def generate_tags(request: MetadataRequest):
-    """Generate SEO tags optimized for 500 character limit"""
     try:
         audience = request.target_audience or "beginners"
-        tags = seo_generator.generate_tags(
-            request.video_topic, 
-            audience, 
-            request.keywords
-        )
-        return {"tags": tags, "total_characters": sum(len(t) for t in tags) + len(tags)}
+        use_ai = request.use_ai if request.use_ai is not None else True
+        tags, source = await generator.generate_tags(request.video_topic, audience, request.keywords, use_ai)
+        return {"tags": tags, "total_characters": sum(len(t) for t in tags) + len(tags), "generated_by": source}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating tags: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/generate/dynamic")
 async def generate_dynamic(request: DynamicGenerateRequest):
-    """
-    Generate YouTube metadata based on the structure provided by the frontend.
-    
-    Only generates the fields specified in the 'structure' parameter.
-    The response will mirror the structure with generated values.
-    
-    Example request:
-    {
-        "video_topic": "Python Programming",
-        "target_audience": "beginners",
-        "structure": {
-            "title": ""
-        }
-    }
-    
-    Example response:
-    {
-        "title": "Python Programming: Complete Guide for beginners"
-    }
-    
-    Supported structure keys:
-    - "title" or "titles": Returns a single best title or list of titles
-    - "description": Returns SEO-optimized description
-    - "hashtags": Returns list of hashtags
-    - "tags": Returns list of tags
-    
-    You can request any combination:
-    - {"title": ""} -> only title
-    - {"title": "", "description": ""} -> title and description
-    - {"hashtags": [], "tags": []} -> hashtags and tags
-    """
     try:
         audience = request.target_audience or "beginners"
+        use_ai = request.use_ai if request.use_ai is not None else True
         structure = request.structure
         response = {}
+        sources = []
         
-        # Normalize structure keys to lowercase for matching
-        structure_keys = {k.lower(): k for k in structure.keys()}
+        keys = {k.lower(): k for k in structure.keys()}
         
-        # Generate only the requested fields
+        if "title" in keys or "titles" in keys:
+            titles, src = await generator.generate_titles(request.video_topic, audience, request.keywords, use_ai)
+            sources.append(src)
+            if "title" in keys:
+                response[keys["title"]] = titles[0] if titles else ""
+            if "titles" in keys:
+                response[keys["titles"]] = titles
         
-        # Handle title/titles
-        if "title" in structure_keys or "titles" in structure_keys:
-            titles = seo_generator.generate_titles(
-                request.video_topic,
-                audience,
-                request.keywords
-            )
-            # Use the original key from the structure
-            if "title" in structure_keys:
-                # If singular "title", return just the best one
-                original_key = structure_keys["title"]
-                response[original_key] = titles[0] if titles else ""
-            if "titles" in structure_keys:
-                # If plural "titles", return the full list
-                original_key = structure_keys["titles"]
-                response[original_key] = titles
+        if "description" in keys:
+            desc, src = await generator.generate_description(request.video_topic, request.video_description, audience, request.keywords, use_ai)
+            sources.append(src)
+            response[keys["description"]] = desc
         
-        # Handle description
-        if "description" in structure_keys:
-            original_key = structure_keys["description"]
-            description = seo_generator.generate_description(
-                request.video_topic,
-                request.video_description,
-                audience,
-                request.keywords
-            )
-            response[original_key] = description
+        if "hashtags" in keys:
+            hashtags, src = await generator.generate_hashtags(request.video_topic, audience, request.keywords, use_ai)
+            sources.append(src)
+            response[keys["hashtags"]] = hashtags
         
-        # Handle hashtags
-        if "hashtags" in structure_keys:
-            original_key = structure_keys["hashtags"]
-            hashtags = seo_generator.generate_hashtags(
-                request.video_topic,
-                audience,
-                request.keywords
-            )
-            response[original_key] = hashtags
+        if "tags" in keys:
+            tags, src = await generator.generate_tags(request.video_topic, audience, request.keywords, use_ai)
+            sources.append(src)
+            response[keys["tags"]] = tags
         
-        # Handle tags
-        if "tags" in structure_keys:
-            original_key = structure_keys["tags"]
-            tags = seo_generator.generate_tags(
-                request.video_topic,
-                audience,
-                request.keywords
-            )
-            response[original_key] = tags
-        
-        # If no valid keys were found in structure
         if not response:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid structure. Supported keys: title, titles, description, hashtags, tags"
-            )
+            raise HTTPException(status_code=400, detail="Invalid structure")
         
+        response["generated_by"] = "ai" if "ai" in sources else "template"
         return response
-
+        
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error generating metadata: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)

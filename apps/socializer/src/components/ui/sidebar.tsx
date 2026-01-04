@@ -1,12 +1,25 @@
 "use client";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Clock, LogOut, Menu, Settings, Sparkles, User, X, Zap } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  LogOut,
+  Menu,
+  Settings,
+  Sparkles,
+  Star,
+  User,
+  X,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useRecoilValue } from "recoil";
+import { usePricingDialog } from "@/components/pricing-dialog";
 import {
   totalUsageSelector,
   userDisplaySelector,
@@ -46,7 +59,7 @@ const SidebarUsageTracker = ({ isCollapsed }: { isCollapsed: boolean }) => {
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
       setTimeLeft(
-        `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+        `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
       );
     }, 1000);
 
@@ -112,15 +125,27 @@ const SidebarUsageTracker = ({ isCollapsed }: { isCollapsed: boolean }) => {
 };
 
 // Account Dropdown Component - Now powered by Recoil
-const AccountDropdown = ({ isCollapsed = false }: { isCollapsed?: boolean }) => {
+const AccountDropdown = ({
+  isCollapsed = false,
+}: {
+  isCollapsed?: boolean;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const userDisplay = useRecoilValue(userDisplaySelector);
+  const { openPricingDialog } = usePricingDialog();
+  function openPricingDialogBox() {
+    // Open the dialog on mount
+    openPricingDialog();
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -136,8 +161,10 @@ const AccountDropdown = ({ isCollapsed = false }: { isCollapsed?: boolean }) => 
 
   const handleLogout = async () => {
     // Clear cookies via API or directly
-    document.cookie = "youtube_access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "youtube_access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     localStorage.clear();
     setIsOpen(false);
     // Redirect to home page
@@ -165,9 +192,11 @@ const AccountDropdown = ({ isCollapsed = false }: { isCollapsed?: boolean }) => 
                       group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300"
           />
         ) : (
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 
+          <div
+            className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 
                         flex items-center justify-center text-white text-sm font-bold flex-shrink-0
-                        group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300">
+                        group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300"
+          >
             {userDisplay.initial}
           </div>
         )}
@@ -179,8 +208,12 @@ const AccountDropdown = ({ isCollapsed = false }: { isCollapsed?: boolean }) => 
             transition={{ duration: 0.2 }}
             className="flex flex-col min-w-0 text-left"
           >
-            <span className="text-sm font-medium text-white truncate">{userDisplay.name}</span>
-            <span className="text-xs text-gray-500 truncate">{userDisplay.plan} plan</span>
+            <span className="text-sm font-medium text-white truncate">
+              {userDisplay.name}
+            </span>
+            <span className="text-xs text-gray-500 truncate">
+              {userDisplay.plan} plan
+            </span>
           </motion.div>
         )}
       </button>
@@ -210,33 +243,57 @@ const AccountDropdown = ({ isCollapsed = false }: { isCollapsed?: boolean }) => 
                     className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-purple-500/20"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 
+                  <div
+                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 
                                 flex items-center justify-center text-white font-bold
-                                shadow-lg shadow-purple-500/20">
+                                shadow-lg shadow-purple-500/20"
+                  >
                     {userDisplay.initial}
                   </div>
                 )}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-semibold text-white truncate">{userDisplay.name}</span>
-                  <span className="text-xs text-gray-400 truncate">{userDisplay.email || "No email"}</span>
+                  <span className="text-sm font-semibold text-white truncate">
+                    {userDisplay.name}
+                  </span>
+                  <span className="text-xs text-gray-400 truncate">
+                    {userDisplay.email || "No email"}
+                  </span>
                 </div>
               </div>
               {/* Plan badge */}
               <div className="mt-2">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                  ${userDisplay.plan === "enterprise"
-                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                    : userDisplay.plan === "pro"
-                      ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                      : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
-                  }`}>
-                  {userDisplay.plan.charAt(0).toUpperCase() + userDisplay.plan.slice(1)} Plan
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                  ${
+                    userDisplay.plan === "enterprise"
+                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                      : userDisplay.plan === "pro"
+                        ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                        : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
+                  }`}
+                >
+                  {userDisplay.plan.charAt(0).toUpperCase() +
+                    userDisplay.plan.slice(1)}{" "}
+                  Plan
                 </span>
               </div>
             </div>
 
             {/* Menu Items */}
             <div className="space-y-1">
+              {/* Go Pro Button */}
+              <button
+                onClick={openPricingDialogBox}
+                className="w-full flex  bg-gradient-to-r from-purple-800/90 to-pink-500/40 items-center gap-3 px-3 py-2.5 rounded-lg
+                         text-gray-300 hover:text-white hover:bg-white/5
+                         transition-all  duration-200 group"
+              >
+                <Star className="w-4 h-4 text-gray-400 group-hover:text-purple-400 animate-spin transition-colors" />
+                <span className="text-sm">
+                  <span className="flex">Go Pro</span>
+                </span>
+              </button>
+
               <button
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
                          text-gray-300 hover:text-white hover:bg-white/5
@@ -295,14 +352,17 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
   }, []);
 
   const isActiveLink = (link: string) => {
-    const normalizedPathname = pathname.replace(/\/$/, '') || '/';
-    const normalizedLink = link.replace(/\/$/, '') || '/';
+    const normalizedPathname = pathname.replace(/\/$/, "") || "/";
+    const normalizedLink = link.replace(/\/$/, "") || "/";
 
     if (normalizedLink === "/dashboard") {
       return normalizedPathname === "/dashboard";
     }
 
-    return normalizedPathname === normalizedLink || normalizedPathname.startsWith(normalizedLink + '/');
+    return (
+      normalizedPathname === normalizedLink ||
+      normalizedPathname.startsWith(normalizedLink + "/")
+    );
   };
 
   return (
@@ -328,12 +388,16 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                 transition={{ duration: 0.2 }}
               >
                 <Link href="/" className="flex items-center gap-2 group">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 
-                                border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                  <div
+                    className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 
+                                border border-purple-500/30 group-hover:border-purple-500/50 transition-all"
+                  >
                     <Sparkles className="w-5 h-5 text-purple-400" />
                   </div>
-                  <span className="font-bold text-lg bg-gradient-to-r from-white via-purple-200 to-white 
-                                 bg-clip-text text-transparent">
+                  <span
+                    className="font-bold text-lg bg-gradient-to-r from-white via-purple-200 to-white 
+                                 bg-clip-text text-transparent"
+                  >
                     invid.ai
                   </span>
                 </Link>
@@ -345,7 +409,11 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                         border border-white/10 hover:border-purple-500/30
                         text-gray-400 hover:text-white transition-all duration-300"
             >
-              {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+              {isCollapsed ? (
+                <ChevronRight size={18} />
+              ) : (
+                <ChevronLeft size={18} />
+              )}
             </button>
           </div>
         </div>
@@ -362,14 +430,16 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                 href={item.link}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium 
                           transition-all duration-300 relative group
-                          ${isActive
-                    ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
-                    : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
-                  }`}
+                          ${
+                            isActive
+                              ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
+                              : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
+                          }`}
                 title={isCollapsed ? item.name : undefined}
               >
                 {Icon && (
-                  <Icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-300
+                  <Icon
+                    className={`w-5 h-5 flex-shrink-0 transition-colors duration-300
                     ${isActive ? "text-purple-400" : "group-hover:text-purple-400"}`}
                   />
                 )}
@@ -401,7 +471,10 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
       </motion.div>
 
       {/* Mobile Menu Button */}
-      <div onClick={() => setIsCollapsed(!isCollapsed)} className="md:hidden fixed top-4 left-4 z-40">
+      <div
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="md:hidden fixed top-4 left-4 z-40"
+      >
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="p-3 rounded-2xl bg-black/80 backdrop-blur-xl
@@ -425,8 +498,8 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
               transition={{ duration: 0.2 }}
               className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-md z-40"
               onClick={() => {
-                setIsOpen(false)
-                setIsCollapsed(!isCollapsed)
+                setIsOpen(false);
+                setIsCollapsed(!isCollapsed);
               }}
             />
 
@@ -445,12 +518,16 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
               <div className="p-5 border-b border-white/10">
                 <div className="flex items-center justify-between">
                   <Link href="/" className="flex items-center gap-2 group">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 
-                                  border border-purple-500/30">
+                    <div
+                      className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 
+                                  border border-purple-500/30"
+                    >
                       <Sparkles className="w-5 h-5 text-purple-400" />
                     </div>
-                    <span className="font-bold text-lg bg-gradient-to-r from-white via-purple-200 to-white 
-                                   bg-clip-text text-transparent">
+                    <span
+                      className="font-bold text-lg bg-gradient-to-r from-white via-purple-200 to-white 
+                                   bg-clip-text text-transparent"
+                    >
                       invid.ai
                     </span>
                   </Link>
@@ -478,13 +555,16 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                       onClick={() => setIsOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium 
                                 transition-all duration-300 relative
-                                ${isActive
-                          ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
-                          : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
-                        }`}
+                                ${
+                                  isActive
+                                    ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
+                                    : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                                }`}
                     >
                       {Icon && (
-                        <Icon className={`w-5 h-5 ${isActive ? "text-purple-400" : ""}`} />
+                        <Icon
+                          className={`w-5 h-5 ${isActive ? "text-purple-400" : ""}`}
+                        />
                       )}
                       {item.name}
                     </Link>
@@ -510,4 +590,3 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
 };
 
 export default Sidebar;
-

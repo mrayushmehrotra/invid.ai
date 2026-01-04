@@ -9,18 +9,60 @@ const AuthContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [processing, setProcessing] = React.useState(false);
+  const [checkingAuth, setCheckingAuth] = React.useState(true);
   const exchangeAttempted = React.useRef(false);
+  const authUrlCache = React.useRef<string | null>(null);
+
+  // Check for existing valid session first
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      const existingToken = localStorage.getItem("youtube_access_token");
+      const userId = localStorage.getItem("user_id") || document.cookie.match(/user_id=([^;]+)/)?.[1];
+
+      if (existingToken && userId) {
+        try {
+          // Validate session with backend
+          const response = await fetch("/api/google", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "checkSession", userId }),
+          });
+          const result = await response.json();
+
+          if (result.valid) {
+            console.log("✅ Existing valid session found, redirecting to dashboard");
+            router.push("/dashboard");
+            return;
+          }
+        } catch (error) {
+          console.log("Session check failed, showing sign-in");
+        }
+      }
+      setCheckingAuth(false);
+    };
+
+    // Only check if no code in URL (not in callback flow)
+    if (!searchParams.get("code")) {
+      checkExistingAuth();
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [router, searchParams]);
 
   // Handle OAuth callback
   useEffect(() => {
     const code = searchParams.get("code");
     if (code && !processing && !exchangeAttempted.current) {
+      // Clear code from URL immediately to prevent retries on refresh
+      window.history.replaceState({}, '', '/sign-in');
+
       exchangeAttempted.current = true;
       setProcessing(true);
       const toastId = toast.loading("Connecting to YouTube...");
 
       const exchangeCode = async () => {
         try {
+          console.log("🔍 Sign In Callback: Exchanging code for tokens");
           const response = await fetch("/api/google", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -35,6 +77,7 @@ const AuthContent = () => {
           const result = await response.json();
 
           if (result.success && result.tokens) {
+            console.log("✅ Sign In Callback: Successfully connected!");
             localStorage.setItem(
               "youtube_access_token",
               result.tokens.access_token,
@@ -48,14 +91,15 @@ const AuthContent = () => {
               { id: toastId },
             );
             setProcessing(false);
-            exchangeAttempted.current = false;
+            // Don't reset exchangeAttempted - the code is already burned
           }
         } catch (error: any) {
+          console.error("❌ Sign In Callback: Error details:", error);
           toast.error(`Authentication error: ${error.message}`, {
             id: toastId,
           });
           setProcessing(false);
-          exchangeAttempted.current = false;
+          // Don't reset exchangeAttempted - the code is already burned
         }
       };
       exchangeCode();
@@ -64,14 +108,37 @@ const AuthContent = () => {
 
   const authenticateWithGoogle = async () => {
     try {
+      console.log("🔍 Sign In: Starting Google authentication");
+
+      // Use cached auth URL if available
+      if (authUrlCache.current) {
+        console.log("✅ Sign In: Using cached auth URL");
+        window.location.href = authUrlCache.current;
+        return;
+      }
+
       const response = await fetch("/api/google?action=auth");
       const { authUrl } = await response.json();
+
+      // Cache the auth URL for future use
+      authUrlCache.current = authUrl;
+
+      console.log("✅ Sign In: Got auth URL, redirecting...");
       window.location.href = authUrl;
     } catch (_error) {
-      console.error("Auth failed:", _error);
-      toast.error("Authentication failed");
+      console.error("❌ Sign In: Auth failed:", _error);
+      toast.error("Authentication failed", { id: "21312" });
     }
   };
+
+  // Show loading state while checking existing auth
+  if (checkingAuth) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-black">
+        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-black text-white overflow-hidden relative">

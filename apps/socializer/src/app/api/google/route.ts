@@ -8,8 +8,24 @@ import {
   getUsageSummary,
   getSessionExpiryDate,
   checkSession,
-  USAGE_LIMITS
+  USAGE_LIMITS,
 } from "@/lib/models";
+import { tryCatch } from "@/lib/try-catch";
+import { log } from "node:console";
+
+// CORS headers for cross-origin requests (mobile app on different port)
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+/**
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
 
 /**
  * Sanitize tags for YouTube API requirements
@@ -55,6 +71,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
 
   if (action === "auth") {
+    console.log("🔍 YouTube Auth: Generating auth URL");
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent", // Force to get refresh token
@@ -66,19 +83,24 @@ export async function GET(request: NextRequest) {
         "https://www.googleapis.com/auth/yt-analytics.readonly",
       ],
     });
-    return NextResponse.json({ authUrl });
+    console.log("✅ YouTube Auth: Auth URL generated successfully");
+    return NextResponse.json({ authUrl }, { headers: corsHeaders });
   }
 
   if (action === "callback" && code) {
     try {
+      console.log("🔍 YouTube Callback: Received code, exchanging for tokens");
       const { tokens } = await oauth2Client.getToken(code);
       oauth2Client.setCredentials(tokens);
+      console.log("✅ YouTube Callback: Tokens exchanged successfully");
 
       const html = `
         <html>
           <body>
             <script>
-              window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', tokens: ${JSON.stringify(tokens)} }, window.location.origin);
+              // Use '*' to allow cross-origin (mobile app may be on different port)
+              // In production, you'd use a specific origin
+              window.opener.postMessage({ type: 'GOOGLE_AUTH_SUCCESS', tokens: ${JSON.stringify(tokens)} }, '*');
               window.close();
             </script>
           </body>
@@ -86,17 +108,20 @@ export async function GET(request: NextRequest) {
       `;
 
       return new NextResponse(html, {
-        headers: { "Content-Type": "text/html" },
+        headers: { "Content-Type": "text/html", ...corsHeaders },
       });
     } catch (_error) {
       return NextResponse.json(
         { error: "Authentication failed" },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
   }
 
-  return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  return NextResponse.json(
+    { error: "Invalid request" },
+    { status: 400, headers: corsHeaders },
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -113,7 +138,9 @@ export async function POST(request: NextRequest) {
       data = {
         title: formData.get("title") as string,
         description: formData.get("description") as string,
-        tags: (formData.get("tags") as string)?.split(",").map((t) => t.trim()) || [],
+        tags:
+          (formData.get("tags") as string)?.split(",").map((t) => t.trim()) ||
+          [],
         privacy: formData.get("privacy") as string,
         videoFile: formData.get("videoFile") as File,
       };
@@ -130,14 +157,43 @@ export async function POST(request: NextRequest) {
     // ACTION: Exchange Code & Save User to Database
     // =====================================================
     if (action === "exchangeCode") {
-      const { code } = data;
-      const { tokens } = await oauth2Client.getToken(code);
-      oauth2Client.setCredentials(tokens);
+      console.log("🔍 YouTube Exchange: Starting code exchange");
+      console.log("📝 Code received:", data.code?.substring(0, 20) + "...");
+
+      let tokens;
+      try {
+        tokens = await oauth2Client.getToken(data.code);
+        oauth2Client.setCredentials(tokens.tokens);
+        console.log("✅ YouTube Exchange: Code exchanged successfully");
+        console.log("🎫 Tokens received:", Object.keys(tokens.tokens));
+      } catch (error: any) {
+        console.error(
+          "❌ YouTube Exchange: Token exchange failed:",
+          error.message,
+        );
+        console.error("🔍 Error details:", error.code, error.status);
+
+        if (error.code === 400 && error.message?.includes("invalid_grant")) {
+          console.error("💡 This usually means:");
+          console.error("   - Code expired (codes last ~10 minutes)");
+          console.error("   - Code already used");
+          console.error("   - Redirect URI mismatch");
+        }
+
+        return NextResponse.json(
+          {
+            error: "Failed to exchange authorization code. Please try again.",
+            details: error.message,
+          },
+          { status: 400, headers: corsHeaders },
+        );
+      }
 
       // Get user info from Google
       const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
       const userInfoResponse = await oauth2.userinfo.get();
       const userInfo = userInfoResponse.data;
+      console.log("👤 User info retrieved:", userInfo.email);
 
       // Get YouTube channel info
       const youtube = google.youtube({ version: "v3", auth: oauth2Client });
@@ -153,10 +209,14 @@ export async function POST(request: NextRequest) {
       // Session expires in 24 hours
       const sessionExpiresAt = getSessionExpiryDate();
 
+      console.log(userInfo, "this is the user info");
       const existingUser = await User.findOne({ email: userInfo.email });
 
       let user;
+      console.log(existingUser, "is there?");
       if (existingUser) {
+        console.log("im inside exisitng user");
+
         // Update existing user with new YouTube tokens
         user = await User.findByIdAndUpdate(
           existingUser._id,
@@ -168,12 +228,13 @@ export async function POST(request: NextRequest) {
               youtubeChannelName: channel?.snippet?.title,
               youtubeChannelImage: channel?.snippet?.thumbnails?.default?.url,
               youtubeAccessToken: tokens.access_token,
-              youtubeRefreshToken: tokens.refresh_token || existingUser.youtubeRefreshToken,
+              youtubeRefreshToken:
+                tokens.refresh_token || existingUser.youtubeRefreshToken,
               youtubeConnectedAt: new Date(),
               sessionExpiresAt: sessionExpiresAt,
             },
           },
-          { new: true }
+          { new: true },
         );
       } else {
         // Create new user
@@ -195,7 +256,7 @@ export async function POST(request: NextRequest) {
 
       const response = NextResponse.json({
         success: true,
-        tokens,
+        tokens: tokens.tokens,
         user: {
           id: user._id,
           email: user.email,
@@ -206,18 +267,22 @@ export async function POST(request: NextRequest) {
           youtubeChannelName: user.youtubeChannelName,
           youtubeChannelImage: user.youtubeChannelImage,
           sessionExpiresAt: user.sessionExpiresAt,
-        }
+        },
       });
 
-      if (tokens.access_token) {
+      if (tokens.tokens.access_token) {
         // Set cookies to expire with session (24 hours)
-        response.cookies.set("youtube_access_token", tokens.access_token, {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 60 * 60 * 24, // 24 hours
-        });
+        response.cookies.set(
+          "youtube_access_token",
+          tokens.tokens.access_token,
+          {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24, // 24 hours
+          },
+        );
         response.cookies.set("user_id", user._id, {
           httpOnly: false,
           secure: process.env.NODE_ENV === "production",
@@ -235,7 +300,10 @@ export async function POST(request: NextRequest) {
     // =====================================================
     if (action === "checkSession") {
       if (!userId) {
-        return NextResponse.json({ valid: false, error: "User ID required" }, { status: 400 });
+        return NextResponse.json(
+          { valid: false, error: "User ID required" },
+          { status: 400 },
+        );
       }
 
       await connectDB();
@@ -245,22 +313,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           valid: false,
           error: "Session expired. Please reconnect your YouTube account.",
-          expired: true
+          expired: true,
         });
       }
 
       return NextResponse.json({
         success: true,
         valid: true,
-        user: session.user ? {
-          id: session.user._id,
-          email: session.user.email,
-          name: session.user.name,
-          image: session.user.image,
-          plan: session.user.plan,
-          youtubeChannelId: session.user.youtubeChannelId,
-          youtubeChannelName: session.user.youtubeChannelName,
-        } : null,
+        user: session.user
+          ? {
+              id: session.user._id,
+              email: session.user.email,
+              name: session.user.name,
+              image: session.user.image,
+              plan: session.user.plan,
+              youtubeChannelId: session.user.youtubeChannelId,
+              youtubeChannelName: session.user.youtubeChannelName,
+            }
+          : null,
         expiresAt: session.expiresAt,
         remainingHours: session.remainingHours,
       });
@@ -271,7 +341,10 @@ export async function POST(request: NextRequest) {
     // =====================================================
     if (action === "getUsage") {
       if (!userId) {
-        return NextResponse.json({ error: "User ID required" }, { status: 400 });
+        return NextResponse.json(
+          { error: "User ID required" },
+          { status: 400 },
+        );
       }
 
       await connectDB();
@@ -314,12 +387,15 @@ export async function POST(request: NextRequest) {
       if (userId) {
         const check = await canPerformAction(userId, "videoUpdates", userPlan);
         if (!check.allowed) {
-          return NextResponse.json({
-            success: false,
-            error: `Daily limit reached (${check.limit} updates/day). Upgrade to Pro for more.`,
-            limitReached: true,
-            usage: check,
-          }, { status: 429 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Daily limit reached (${check.limit} updates/day). Upgrade to Pro for more.`,
+              limitReached: true,
+              usage: check,
+            },
+            { status: 429 },
+          );
         }
       }
 
@@ -392,12 +468,15 @@ export async function POST(request: NextRequest) {
       if (userId) {
         const check = await canPerformAction(userId, "videoUploads", userPlan);
         if (!check.allowed) {
-          return NextResponse.json({
-            success: false,
-            error: `Daily limit reached (${check.limit} uploads/day). Upgrade to Pro for more.`,
-            limitReached: true,
-            usage: check,
-          }, { status: 429 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Daily limit reached (${check.limit} uploads/day). Upgrade to Pro for more.`,
+              limitReached: true,
+              usage: check,
+            },
+            { status: 429 },
+          );
         }
       }
 
@@ -507,14 +586,21 @@ export async function POST(request: NextRequest) {
     if (action === "getAnalytics") {
       // Check usage limit
       if (userId) {
-        const check = await canPerformAction(userId, "analyticsViews", userPlan);
+        const check = await canPerformAction(
+          userId,
+          "analyticsViews",
+          userPlan,
+        );
         if (!check.allowed) {
-          return NextResponse.json({
-            success: false,
-            error: `Daily limit reached (${check.limit} analytics views/day). Upgrade to Pro for unlimited.`,
-            limitReached: true,
-            usage: check,
-          }, { status: 429 });
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Daily limit reached (${check.limit} analytics views/day). Upgrade to Pro for unlimited.`,
+              limitReached: true,
+              usage: check,
+            },
+            { status: 429 },
+          );
         }
         await incrementUsage(userId, "analyticsViews");
       }
