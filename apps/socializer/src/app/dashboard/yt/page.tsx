@@ -345,13 +345,15 @@ const DashboardPage = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setError(null);
-                    fetchChannelData();
-                    fetchAnalytics();
+                    localStorage.clear();
+                    cookieStore.delete("youtube_access_token");
+                    cookieStore.delete("user_id");
+                    cookieStore.delete("next-auth.session-token");
+                    router.push("/sign-in");
                   }}
                   className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-cyan-500/50"
                 >
-                  Try Again
+                  sign out
                 </button>
               )}
             </div>

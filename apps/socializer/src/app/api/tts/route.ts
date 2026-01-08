@@ -1,8 +1,45 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { connectDB } from "@/lib/db";
+import { canPerformAction, incrementUsage, User } from "@/lib/models";
 
 // Stream Speech (Beta) (POST /v1/speech/stream)
 export async function POST(request: NextRequest) {
   try {
+    // Get user from cookie
+    const userId = request.cookies.get("user_id")?.value;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    await connectDB();
+
+    // Get user's plan
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if user can perform this action
+    const check = await canPerformAction(userId, "ttsGenerations", user.plan);
+    if (!check.allowed) {
+      return NextResponse.json(
+        {
+          error: "Daily limit reached for TTS generation. Resets in 24 hours.",
+          limit: check.limit,
+          used: check.used,
+          remaining: check.remaining,
+        },
+        { status: 429 }
+      );
+    }
+
     const { text, voiceId = "Matthew", model = "FALCON", locale = "en-US" } = await request.json();
 
     if (!text || text.trim().length === 0) {
@@ -53,6 +90,9 @@ export async function POST(request: NextRequest) {
       // Return as data URL
       const dataUrl = `data:${contentType};base64,${base64Audio}`;
 
+      // Increment usage after successful generation
+      await incrementUsage(userId, "ttsGenerations");
+
       return NextResponse.json({
         success: true,
         audioFile: dataUrl,
@@ -90,3 +130,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

@@ -46,7 +46,7 @@ const Navbar = () => {
           >
             <div className="relative">
               <Image
-                src="/logo.png"
+                src="/favicon-32x32.png"
                 height={32}
                 width={32}
                 alt="invid.ai logo"

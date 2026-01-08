@@ -1,5 +1,5 @@
 "use client";
-import { FileText, Hash, Home, Music2, Type, Youtube } from "lucide-react";
+import { FileText,  Home, Music2, Youtube } from "lucide-react";
 import Sidebar from "../ui/sidebar";
 
 export function SecondNav() {

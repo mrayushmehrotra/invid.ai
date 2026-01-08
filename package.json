@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "concurrently \"turbo run dev\" \"cd py-server && bash run.sh\"",
+    "dev": "turbo run dev",
     "lint": "turbo run lint",
     "check": "biome check --write .",
     "format": "biome format --write .",

@@ -64,14 +64,14 @@ export const usageAtom = atom<UsageState | null>({
 export const usageLimitsAtom = atom<UsageLimits>({
     key: "usageLimitsAtom",
     default: {
-        metadataGenerations: 3,
+        metadataGenerations: 1,
         ttsGenerations: 1,
         videoUploads: 1,
-        videoUpdates: 3,
-        analyticsViews: 5,
+        videoUpdates: 1,
+        analyticsViews: 1,
         maxVideosStored: 5,
     },
-});
+}); 
 
 // ===========================================
 // SELECTORS

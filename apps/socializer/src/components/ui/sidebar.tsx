@@ -264,13 +264,12 @@ const AccountDropdown = ({
               <div className="mt-2">
                 <span
                   className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-                  ${
-                    userDisplay.plan === "enterprise"
+                  ${userDisplay.plan === "enterprise"
                       ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                       : userDisplay.plan === "pro"
                         ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                         : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
-                  }`}
+                    }`}
                 >
                   {userDisplay.plan.charAt(0).toUpperCase() +
                     userDisplay.plan.slice(1)}{" "}
@@ -387,7 +386,7 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <Link href="/" className="flex items-center gap-2 group">
+                <a href="/" className="flex items-center gap-2 group">
                   <div
                     className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 
                                 border border-purple-500/30 group-hover:border-purple-500/50 transition-all"
@@ -400,7 +399,7 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                   >
                     invid.ai
                   </span>
-                </Link>
+                </a>
               </motion.div>
             )}
             <button
@@ -425,16 +424,15 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
             const isActive = isActiveLink(item.link);
 
             return (
-              <Link
+              <a
                 key={index}
                 href={item.link}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium 
                           transition-all duration-300 relative group
-                          ${
-                            isActive
-                              ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
-                              : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
-                          }`}
+                          ${isActive
+                    ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
+                    : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
+                  }`}
                 title={isCollapsed ? item.name : undefined}
               >
                 {Icon && (
@@ -454,7 +452,7 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                     {item.name}
                   </motion.span>
                 )}
-              </Link>
+              </a>
             );
           })}
         </nav>
@@ -555,11 +553,10 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems }) => {
                       onClick={() => setIsOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium 
                                 transition-all duration-300 relative
-                                ${
-                                  isActive
-                                    ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
-                                }`}
+                                ${isActive
+                          ? "bg-gradient-to-r from-purple-500/20 to-pink-500/10 text-white border border-purple-500/30"
+                          : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                        }`}
                     >
                       {Icon && (
                         <Icon
