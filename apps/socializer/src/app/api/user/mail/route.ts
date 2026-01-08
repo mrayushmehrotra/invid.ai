@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { z } from "zod";
-import { subscriberEmail } from "@/lib/react-mails";
+import { subscriberEmail } from "@/lib/prompts";
 import { EmailService } from "@/lib/mail-service";
 
 const subscribeSchema = z.object({
