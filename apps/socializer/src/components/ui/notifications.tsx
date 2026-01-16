@@ -202,31 +202,13 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
   );
 }
 
-// Convenience functions for common notifications
-export function showSuccess(message: string, title?: string) {
-  const { addNotification } = useNotifications();
-  return addNotification({ type: "success", title, message });
-}
-
-export function showError(message: string, title?: string) {
-  const { addNotification } = useNotifications();
-  return addNotification({ type: "error", title, message, duration: 7000 });
-}
-
-export function showInfo(message: string, title?: string) {
-  const { addNotification } = useNotifications();
-  return addNotification({ type: "info", title, message });
-}
-
-export function showWarning(message: string, title?: string) {
-  const { addNotification } = useNotifications();
-  return addNotification({ type: "warning", title, message, duration: 6000 });
-}
-
-export function showLoading(message: string, title?: string) {
-  const { addNotification } = useNotifications();
-  return addNotification({ type: "loading", title, message, persistent: true });
-}
+/**
+ * Usage example:
+ * const { addNotification, removeNotification } = useNotifications();
+ * addNotification({ type: "success", title: "Done!", message: "Operation completed" });
+ * addNotification({ type: "error", message: "Something went wrong", duration: 7000 });
+ * addNotification({ type: "loading", message: "Processing...", persistent: true });
+ */
 
 // Hook for async operations with loading states
 export function useAsyncNotification<T>() {
