@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package metadata;
+
+// The metadata generation service
+service MetadataService {
+  // Generate all metadata at once
+  rpc GenerateMetadata (MetadataRequest) returns (MetadataResponse);
+  
+  // Generate only titles
+  rpc GenerateTitles (MetadataRequest) returns (TitlesResponse);
+  
+  // Generate only description
+  rpc GenerateDescription (MetadataRequest) returns (DescriptionResponse);
+  
+  // Generate only hashtags
+  rpc GenerateHashtags (MetadataRequest) returns (HashtagsResponse);
+  
+  // Generate only tags
+  rpc GenerateTags (MetadataRequest) returns (TagsResponse);
+  
+  // Dynamic generation based on structure
+  rpc GenerateDynamic (DynamicRequest) returns (DynamicResponse);
+  
+  // Health check
+  rpc HealthCheck (Empty) returns (HealthResponse);
+}
+
+message Empty {}
+
+message MetadataRequest {
+  string video_topic = 1;
+  optional string video_description = 2;
+  optional string target_audience = 3;
+  repeated string keywords = 4;
+  optional bool use_ai = 5;
+}
+
+message DynamicRequest {
+  string video_topic = 1;
+  optional string video_description = 2;
+  optional string target_audience = 3;
+  repeated string keywords = 4;
+  repeated string fields = 5;  // Fields to generate: "title", "titles", "description", "hashtags", "tags"
+  optional bool use_ai = 6;
+}
+
+message MetadataResponse {
+  repeated string titles = 1;
+  string description = 2;
+  repeated string hashtags = 3;
+  repeated string tags = 4;
+  string generated_by = 5;
+}
+
+message TitlesResponse {
+  repeated string titles = 1;
+  string generated_by = 2;
+}
+
+message DescriptionResponse {
+  string description = 1;
+  string generated_by = 2;
+}
+
+message HashtagsResponse {
+  repeated string hashtags = 1;
+  string generated_by = 2;
+}
+
+message TagsResponse {
+  repeated string tags = 1;
+  int32 total_characters = 2;
+  string generated_by = 3;
+}
+
+message DynamicResponse {
+  optional string title = 1;
+  repeated string titles = 2;
+  optional string description = 3;
+  repeated string hashtags = 4;
+  repeated string tags = 5;
+  string generated_by = 6;
+}
+
+message HealthResponse {
+  string status = 1;
+  string version = 2;
+  bool ai_loaded = 3;
+  string model = 4;
+  string device = 5;
+}

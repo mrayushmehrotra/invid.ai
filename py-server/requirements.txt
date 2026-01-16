@@ -10,3 +10,7 @@ transformers>=4.40.0
 torch>=2.0.0
 accelerate>=0.25.0
 sentencepiece>=0.2.0
+
+# gRPC
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
