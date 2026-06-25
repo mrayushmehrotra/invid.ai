@@ -33,46 +33,46 @@ const Navbar = () => {
     <>
       {/* Main Navbar */}
       <nav
-        className="w-full fixed top-4 left-4 right-4 z-[9998] glass rounded-2xl border border-white/10 mx-auto max-w-7xl"
+        className="w-full fixed top-3 left-3 right-3 z-[9998] glass rounded-xl border border-white/10 mx-auto max-w-7xl"
         role="navigation"
         aria-label="Main navigation"
       >
-        <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 py-2.5">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-2 sm:gap-3 group"
+            className="flex items-center gap-2 sm:gap-2.5 group"
             aria-label="invid.ai homepage"
           >
             <div className="relative">
               <Image
                 src="/favicon-32x32.png"
-                height={32}
-                width={32}
+                height={26}
+                width={26}
                 alt="invid.ai logo"
-                className="sm:h-10 sm:w-10 rounded-xl transition-transform duration-300 group-hover:scale-110"
+                className="sm:h-8 sm:w-8 rounded-lg transition-transform duration-300 group-hover:scale-110"
               />
-              <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
             </div>
             <div>
-              <span className="text-xl sm:text-2xl font-bold gradient-text">
+              <span className="text-base sm:text-lg font-bold gradient-text">
                 invid.ai
               </span>
-              <div className="text-[10px] sm:text-xs text-gray-400 -mt-1 hidden sm:block">
+              <div className="text-[9px] sm:text-[10px] text-gray-400 -mt-0.5 hidden sm:block">
                 AI Content Creator
               </div>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8" role="menubar">
+          <div className="hidden md:flex items-center gap-5" role="menubar">
             {pathname === "/" &&
               navLinks.map((item) => (
                 <Link
                   key={item.name}
                   href={item.path}
-                  className="text-gray-300 hover:text-white transition-all duration-300 
-                          relative group py-2 focus-ring rounded px-2"
+                  className="text-sm text-gray-300 hover:text-white transition-all duration-300 
+                          relative group py-1 focus-ring rounded px-2"
                   role="menuitem"
                   aria-label={`Navigate to ${item.name}`}
                 >
@@ -87,25 +87,25 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Auth Section */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             <Link href="/sign-in">
               <Button
                 variant="outline"
                 className="glass border-white/20 text-white hover:bg-white/10 
-                          transition-all duration-300 rounded-xl"
+                          transition-all duration-300 rounded-lg text-sm px-3 py-1.5 h-auto"
               >
                 Sign In
               </Button>
             </Link>
             <Link href="/sign-in" className="group">
               <button
-                className="px-6 py-2 text-white font-medium rounded-xl
+                className="px-4 py-1.5 text-sm text-white font-medium rounded-lg
                               bg-gradient-to-r from-purple-600 to-pink-600 
                               hover:from-purple-700 hover:to-pink-700 
                               shadow-lg hover:shadow-purple-500/25 
                               transition-all duration-300 transform hover:scale-105"
               >
-                Get Started Free
+                Get Started
               </button>
             </Link>
           </div>
@@ -144,40 +144,40 @@ const Navbar = () => {
           >
             <div className="w-full h-full bg-gradient-to-br from-gray-950 via-black to-gray-900 overflow-y-auto">
               {/* Close Button - Top Right */}
-              <div className="absolute top-6 right-6">
+              <div className="absolute top-5 right-5">
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-3 rounded-full glass border border-white/10 text-white hover:bg-white/10 transition-all duration-300"
+                  className="p-2 rounded-full glass border border-white/10 text-white hover:bg-white/10 transition-all duration-300"
                   aria-label="Close menu"
                 >
-                  <X size={24} />
+                  <X size={20} />
                 </button>
               </div>
 
               {/* Menu Content - Centered */}
-              <div className="flex flex-col items-center justify-center min-h-full px-8 py-20">
+              <div className="flex flex-col items-center justify-center min-h-full px-8 py-16">
                 {/* Logo */}
                 <Link
                   href="/"
-                  className="flex items-center gap-3 mb-12 group"
+                  className="flex items-center gap-2.5 mb-10 group"
                   onClick={() => setIsOpen(false)}
                   aria-label="invid.ai homepage"
                 >
                   <div className="relative">
                     <Image
                       src="/logo.png"
-                      height={48}
-                      width={48}
+                      height={36}
+                      width={36}
                       alt="invid.ai logo"
                       className="rounded-xl transition-transform duration-300 group-hover:scale-110"
                     />
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
                   </div>
                   <div>
-                    <span className="text-3xl font-bold gradient-text">
+                    <span className="text-2xl font-bold gradient-text">
                       invid.ai
                     </span>
-                    <div className="text-xs text-gray-400 -mt-1">
+                    <div className="text-[10px] text-gray-400 -mt-0.5">
                       AI Content Creator
                     </div>
                   </div>
@@ -185,12 +185,12 @@ const Navbar = () => {
 
                 {/* Navigation Links */}
                 {pathname === "/" && (
-                  <div className="w-full max-w-sm space-y-2 mb-8" role="menu">
+                  <div className="w-full max-w-xs space-y-1.5 mb-6" role="menu">
                     {navLinks.map((item, index) => (
                       <Link
                         key={item.name}
                         href={item.path}
-                        className="block w-full text-center glass rounded-xl border border-white/10 px-8 py-4 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 text-lg font-medium transform hover:scale-105 focus-ring"
+                        className="block w-full text-center glass rounded-lg border border-white/10 px-6 py-3 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 text-base font-medium transform hover:scale-105 focus-ring"
                         onClick={() => setIsOpen(false)}
                         role="menuitem"
                         aria-label={`Navigate to ${item.name}`}
@@ -206,7 +206,7 @@ const Navbar = () => {
                 )}
 
                 {/* Auth Buttons */}
-                <div className="w-full max-w-sm space-y-4 mt-8">
+                <div className="w-full max-w-xs space-y-3 mt-6">
                   <Link
                     href="/sign-in"
                     className="block w-full"
@@ -216,7 +216,7 @@ const Navbar = () => {
                     <Button
                       variant="outline"
                       className="w-full glass border-white/20 text-white hover:bg-white/10 
-                                py-6 text-lg rounded-xl transition-all duration-300 transform hover:scale-105"
+                                py-3 text-sm rounded-lg transition-all duration-300 transform hover:scale-105"
                     >
                       Sign In
                     </Button>
@@ -228,13 +228,13 @@ const Navbar = () => {
                     aria-label="Get started with invid.ai"
                   >
                     <button
-                      className="w-full px-8 py-6 text-white font-medium rounded-xl text-lg
+                      className="w-full px-6 py-3 text-white font-medium rounded-lg text-sm
                                     bg-gradient-to-r from-purple-600 to-pink-600 
                                     hover:from-purple-700 hover:to-pink-700 
                                     shadow-lg hover:shadow-purple-500/50 
                                     transition-all duration-300 transform hover:scale-105"
                     >
-                      Get Started Free
+                      Get Started
                     </button>
                   </Link>
                 </div>

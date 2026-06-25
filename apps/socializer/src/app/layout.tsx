@@ -4,6 +4,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 import { Toaster } from "react-hot-toast";
+import PageTransition from "@/components/page-transition";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
@@ -150,7 +151,9 @@ export default function RootLayout({
             },
           }}
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          <PageTransition>{children}</PageTransition>
+        </Providers>
       </body>
     </html>
   );

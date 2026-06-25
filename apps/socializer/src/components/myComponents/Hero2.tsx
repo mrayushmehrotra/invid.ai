@@ -1,10 +1,16 @@
 "use client";
-import { Globe, Sparkles, Users, Zap } from "lucide-react";
+import { Globe, Users, Zap } from "lucide-react";
 import Image from "next/image";
 import Tilt from "react-parallax-tilt";
+import { useGsapScrollAnimation, useGsapStagger } from "@/hooks/use-gsap";
 import CurvedLoop from "../ui/CurveLoop";
 
 export function Hero2() {
+  const featuresRef = useGsapStagger<HTMLDivElement>("[data-feature]", {
+    start: "top 80%",
+  });
+  const statsRef = useGsapScrollAnimation<HTMLDivElement>({ start: "top 85%" });
+
   const features = [
     {
       icon: Globe,
@@ -47,10 +53,6 @@ export function Hero2() {
             <br />
             <br />
             <br />
-            {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6 text-sm font-medium"> */}
-            {/*   <Sparkles className="w-4 h-4 text-purple-400" /> */}
-            {/*   <span className="gradient-text">Why Choose invid.ai?</span> */}
-            {/* </div> */}
 
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
@@ -70,7 +72,10 @@ export function Hero2() {
           </div>
 
           {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div
+            ref={featuresRef}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16"
+          >
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
@@ -79,13 +84,12 @@ export function Hero2() {
                   tiltReverse={true}
                   tiltMaxAngleY={10}
                   tiltMaxAngleX={10}
-                  className="animate-slide-up"
-                  style={{ animationDelay: `${index * 0.2}s` }}
+                  data-feature
                 >
                   <div
                     className="glass-strong rounded-2xl p-8 h-full border border-white/10 
                               hover:border-purple-500/30 transition-all duration-500 
-                              group hover:shadow-2xl hover:shadow-purple-500/10 relative overflow-hidden"
+                              group hover:shadow-2xl hover:shadow-purple-500/10 relative overflow-hidden card-gradient-border"
                   >
                     {/* Icon */}
                     <div
@@ -151,10 +155,13 @@ export function Hero2() {
           </div>
 
           {/* Stats Section */}
-          <div className="glass-strong rounded-3xl p-8 md:p-12 border border-white/10 animate-fade-in relative overflow-hidden">
+          <div
+            ref={statsRef}
+            className="glass-strong rounded-3xl p-8 md:p-12 border border-white/10 relative overflow-hidden shimmer"
+          >
             {/* Background glow effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-indigo-500/10 animate-pulse-slow" />
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 relative z-10">
               <h3 className="text-2xl md:text-3xl font-bold gradient-text mb-4">
                 Trusted by Content Creators Worldwide
               </h3>
@@ -164,34 +171,34 @@ export function Hero2() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="text-center relative z-10">
-                <div className="text-3xl md:text-4xl font-bold gradient-text-purple mb-2 animate-float">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold stat-number mb-2 animate-float">
                   100+
                 </div>
                 <div className="text-gray-400 text-sm">Active Creators</div>
               </div>
-              <div className="text-center relative z-10">
+              <div className="text-center">
                 <div
-                  className="text-3xl md:text-4xl font-bold gradient-text-purple mb-2 animate-float"
+                  className="text-3xl md:text-4xl font-bold stat-number mb-2 animate-float"
                   style={{ animationDelay: "0.2s" }}
                 >
                   50K+
                 </div>
                 <div className="text-gray-400 text-sm">Content Generated</div>
               </div>
-              <div className="text-center relative z-10">
+              <div className="text-center">
                 <div
-                  className="text-3xl md:text-4xl font-bold gradient-text-purple mb-2 animate-float"
+                  className="text-3xl md:text-4xl font-bold stat-number mb-2 animate-float"
                   style={{ animationDelay: "0.4s" }}
                 >
                   95%
                 </div>
                 <div className="text-gray-400 text-sm">Engagement Boost</div>
               </div>
-              <div className="text-center relative z-10">
+              <div className="text-center">
                 <div
-                  className="text-3xl md:text-4xl font-bold gradient-text-purple mb-2 animate-float"
+                  className="text-3xl md:text-4xl font-bold stat-number mb-2 animate-float"
                   style={{ animationDelay: "0.6s" }}
                 >
                   24/7
