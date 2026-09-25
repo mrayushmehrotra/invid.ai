@@ -1,0 +1,7 @@
+{
+  "name": "@invid/pipeline",
+  "private": true,
+  "scripts": {
+    "dev": "bash run.sh api"
+  }
+}

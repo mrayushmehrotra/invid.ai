@@ -1,0 +1,11 @@
+faster-whisper
+ffmpeg-python
+fastapi
+uvicorn
+jinja2
+pillow
+requests
+sqlalchemy
+yt-dlp
+ollama
+python-multipart

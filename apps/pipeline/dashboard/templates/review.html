@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shorts Review Queue</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 40px auto; }
+    h1 { margin-bottom: 8px; }
+    .clip { border: 1px solid #ccc; padding: 16px; margin-bottom: 20px; border-radius: 8px; }
+    .clip video { width: 270px; border-radius: 4px; }
+    .clip img { width: 270px; margin-top: 8px; border-radius: 4px; }
+    .actions button { margin-right: 8px; padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .btn-approve { background: #22c55e; color: white; }
+    .btn-reject { background: #ef4444; color: white; }
+    .btn-approve:hover { background: #16a34a; }
+    .btn-reject:hover { background: #dc2626; }
+    .status-approved { color: green; font-weight: bold; }
+    .status-rejected { color: red; font-weight: bold; }
+    .status-pending { color: orange; font-weight: bold; }
+    .meta { color: #555; margin: 4px 0; }
+    #loading { color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Shorts Review Queue</h1>
+  <p id="loading">Loading clips...</p>
+  <div id="clips-container"></div>
+
+  <script>
+    async function loadClips() {
+      const res = await fetch("/api/clips?status=pending_review");
+      const clips = await res.json();
+      const container = document.getElementById("clips-container");
+      const loading = document.getElementById("loading");
+      loading.remove();
+
+      if (clips.length === 0) {
+        container.innerHTML = "<p>No pending clips.</p>";
+        return;
+      }
+
+      clips.forEach(clip => {
+        const div = document.createElement("div");
+        div.className = "clip";
+        div.innerHTML = `
+          <video controls src="/video/${clip.id}"></video>
+          <h3>${clip.gen_title || "Untitled"}</h3>
+          <p class="meta">${clip.gen_description || ""}</p>
+          <p class="meta"><em>${clip.gen_hashtags || ""}</em></p>
+          <p class="meta">Score: ${clip.score} — ${clip.reason || ""}</p>
+          <p>Status: <span class="status-${clip.status}">${clip.status}</span></p>
+          <div class="actions">
+            <button class="btn-approve" onclick="approve(${clip.id})">&#9989; Approve</button>
+            <button class="btn-reject" onclick="reject(${clip.id})">&#10060; Reject</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function approve(id) {
+      await fetch(`/api/clips/${id}/approve`, { method: "POST" });
+      loadClips();
+    }
+
+    async function reject(id) {
+      await fetch(`/api/clips/${id}/reject`, { method: "POST" });
+      loadClips();
+    }
+
+    loadClips();
+  </script>
+</body>
+</html>
